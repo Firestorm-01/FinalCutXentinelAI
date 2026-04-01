@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XentinelAI — Security Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#050608;--bg2:#080b10;--surface:#0d1117;--surface2:#111820;
+  --border:rgba(255,255,255,0.07);--border-bright:rgba(99,255,180,0.25);
+  --accent:#63ffb4;--accent2:#ff4d6d;--accent3:#ffd166;--accent4:#4da6ff;
+  --text:#e8edf5;--muted:#a9acb0;--muted2:#a9acb0;
+  --font-display:'Syne',sans-serif;--font-mono:'JetBrains Mono',monospace;--font-ui:'Space Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);min-height:100vh;overflow-x:hidden;cursor:none}
+
+/* NOISE */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9000;opacity:.4}
+
+/* CURSOR */
+.cursor{position:fixed;width:12px;height:12px;background:var(--accent);border-radius:50%;pointer-events:none;z-index:9999;mix-blend-mode:screen;transition:transform .1s ease;transform:translate(-50%,-50%)}
+.cursor-ring{position:fixed;width:36px;height:36px;border:1px solid rgba(99,255,180,.4);border-radius:50%;pointer-events:none;z-index:9998;transition:width .2s,height .2s;transform:translate(-50%,-50%)}
+
+/* GRID BG */
+.grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(99,255,180,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(99,255,180,.04) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black,transparent)}
+
+/* ORBS */
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+.orb-1{width:600px;height:600px;background:radial-gradient(circle,rgba(99,255,180,.06),transparent 70%);top:-200px;right:-100px;animation:float1 8s ease-in-out infinite}
+.orb-2{width:400px;height:400px;background:radial-gradient(circle,rgba(255,77,109,.05),transparent 70%);bottom:0;left:-100px;animation:float2 10s ease-in-out infinite}
+.orb-3{width:300px;height:300px;background:radial-gradient(circle,rgba(77,166,255,.04),transparent 70%);top:50%;left:50%;animation:float3 12s ease-in-out infinite}
+@keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,40px)}}
+@keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-30px)}}
+@keyframes float3{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-45%,-55%)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scanAnim{0%{transform:scaleX(0);transform-origin:left}50%{transform:scaleX(1);transform-origin:left}50.01%{transform:scaleX(1);transform-origin:right}100%{transform:scaleX(0);transform-origin:right}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes glow{0%,100%{box-shadow:0 0 6px var(--accent)}50%{box-shadow:0 0 18px var(--accent),0 0 32px rgba(99,255,180,.3)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes countUp{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;padding:18px 40px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(5,6,8,.97),transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-wordmark{font-family:var(--font-display);font-weight:800;font-size:18px;color:var(--text);letter-spacing:-.02em}
+.nav-wordmark span{color:var(--accent)}
+.nav-right{display:flex;align-items:center;gap:24px}
+.nav-status{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--muted2);transition:background .3s}
+.status-dot.live{background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite}
+.status-dot.scanning{background:var(--accent3);animation:pulse .8s infinite}
+.status-dot.error{background:var(--accent2)}
+.nav-hackbadge{font-family:var(--font-mono);font-size:10px;color:var(--accent);border:1px solid var(--border-bright);padding:4px 10px;letter-spacing:.08em}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:220px 1fr;padding-top:57px;min-height:100vh;position:relative;z-index:1}
+
+/* SIDEBAR */
+.sidebar{position:sticky;top:57px;height:calc(100vh - 57px);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;background:rgba(5,6,8,.6)}
+.sidebar-top{padding:28px 20px 16px}
+.sidebar-brand-label{font-family:var(--font-mono);font-size:9px;color:var(--muted2);letter-spacing:.16em;text-transform:uppercase;margin-bottom:4px}
+.sidebar-brand-title{font-size:20px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.sidebar-brand-title span{color:var(--accent)}
+.sidebar-divider{height:1px;background:var(--border);margin:16px 0}
+.sidebar-section{padding:0 20px;font-family:var(--font-mono);font-size:9px;color:var(--muted2);letter-spacing:.14em;text-transform:uppercase;margin:16px 0 6px}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-family:var(--font-mono);font-size:12px;color:var(--muted);cursor:none;border-left:2px solid transparent;transition:all .2s;user-select:none;position:relative}
+.sidebar-item:hover{color:var(--text);background:rgba(255,255,255,.02)}
+.sidebar-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(99,255,180,.04)}
+.sidebar-item.active svg{opacity:1}
+.sidebar-item svg{opacity:.5;transition:opacity .2s;flex-shrink:0}
+.sidebar-badge{margin-left:auto;font-family:var(--font-mono);font-size:10px;font-weight:700;padding:1px 7px}
+.badge-red{background:rgba(255,77,109,.15);color:var(--accent2);border:1px solid rgba(255,77,109,.2)}
+.badge-muted{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
+.api-indicator{font-family:var(--font-mono);font-size:10px;color:var(--muted2);display:flex;align-items:center;gap:6px}
+
+/* MAIN */
+main{min-width:0;overflow-x:hidden}
+.section{display:none}.section.active{display:block;animation:fadeIn .3s ease}
+
+/* ── SCAN SECTION ── */
+.scan-hero{padding:48px 48px 32px;position:relative;overflow:hidden;border-bottom:1px solid var(--border)}
+.scan-hero::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(99,255,180,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(99,255,180,.03) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse 80% 60% at 20% 50%,black,transparent)}
+.scan-hero-tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--border-bright);padding:6px 14px;margin-bottom:20px;animation:fadeUp .5s ease both}
+.scan-hero-tag::before{content:'';width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite}
+.scan-hero-title{font-size:clamp(40px,5vw,72px);font-weight:800;line-height:.92;letter-spacing:-.04em;margin-bottom:16px;animation:fadeUp .5s .08s ease both}
+.scan-hero-title .outline{color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.75)}
+.scan-hero-title .green{color:var(--accent)}
+.scan-hero-sub{font-family:var(--font-mono);font-size:13px;color:var(--muted);line-height:1.65;max-width:500px;animation:fadeUp .5s .16s ease both}
+
+/* SCAN INPUT */
+.scan-input-area{padding:32px 48px;border-bottom:1px solid var(--border)}
+.scan-card{background:var(--surface);border:1px solid var(--border);position:relative;overflow:hidden;animation:fadeUp .5s .24s ease both}
+.scan-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.6}
+.terminal-header{padding:13px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.02)}
+.terminal-dots{display:flex;gap:6px}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot-r{background:var(--accent2)}.dot-y{background:var(--accent3)}.dot-g{background:var(--accent)}
+.terminal-title{font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.06em}
+.scan-card-body{padding:24px}
+.scan-tabs{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);width:fit-content;background:var(--bg2)}
+.scan-tab{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:8px 18px;color:var(--muted);cursor:none;transition:all .2s;border-right:1px solid var(--border)}
+.scan-tab:last-child{border-right:none}
+.scan-tab.active{background:var(--surface2);color:var(--accent)}
+.scan-tab:hover:not(.active){color:var(--text)}
+.scan-row{display:flex;gap:10px;align-items:stretch}
+.scan-input{flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:13px;padding:13px 16px;outline:none;transition:border-color .2s}
+.scan-input:focus{border-color:var(--accent)}
+.scan-input::placeholder{color:var(--muted2)}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--bg);background:var(--accent);padding:13px 26px;border:none;letter-spacing:.08em;text-transform:uppercase;cursor:none;white-space:nowrap;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);transition:all .2s;position:relative;overflow:hidden}
+.btn-primary::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.2);transform:translateX(-100%);transition:transform .3s}
+.btn-primary:hover::after{transform:translateX(0)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(99,255,180,.25)}
+.btn-primary:disabled{background:var(--muted2);color:var(--muted);cursor:not-allowed;clip-path:none;box-shadow:none}
+.btn-primary:disabled::after{display:none}
+.btn-secondary{font-family:var(--font-mono);font-size:11px;color:var(--muted);background:transparent;border:1px solid var(--border);padding:11px 20px;cursor:none;letter-spacing:.08em;text-transform:uppercase;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-secondary:hover{border-color:rgba(255,255,255,.15);color:var(--text)}
+.drop-zone{border:1px dashed var(--border);padding:32px;text-align:center;cursor:none;transition:all .2s;display:none}
+.drop-zone.show{display:block}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:rgba(99,255,180,.03)}
+.drop-text{font-family:var(--font-mono);font-size:13px;color:var(--muted)}
+.drop-text span{color:var(--accent)}
+.drop-file{font-family:var(--font-mono);font-size:11px;color:var(--accent);margin-top:8px}
+.scan-opt{display:flex;align-items:center;gap:8px;margin-top:16px;font-family:var(--font-mono);font-size:11px;color:var(--muted);cursor:none}
+.scan-opt input{accent-color:var(--accent);cursor:none}
+
+/* PROGRESS - TERMINAL STYLE */
+.scan-progress{display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:20px}
+.scan-progress.show{display:block}
+.progress-steps{display:flex;flex-direction:column;gap:6px}
+.pstep{display:flex;align-items:center;gap:12px;font-family:var(--font-mono);font-size:12px;color:var(--muted2);transition:color .3s;padding:3px 0}
+.pstep.done{color:var(--accent)}.pstep.running{color:var(--accent3)}.pstep.error{color:var(--accent2)}
+.pdot{width:8px;height:8px;border-radius:50%;background:var(--muted2);flex-shrink:0;transition:background .3s}
+.pstep.done .pdot{background:var(--accent);box-shadow:0 0 5px var(--accent)}
+.pstep.running .pdot{background:var(--accent3);animation:pulse .8s infinite}
+.pstep.error .pdot{background:var(--accent2)}
+.psep{font-family:var(--font-mono);font-size:11px;color:var(--muted2)}
+
+/* SCAN LINE ANIMATION */
+.scan-line-anim{height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);margin:4px 0;animation:scanAnim 2.5s ease-in-out infinite;opacity:.5;display:none}
+.scan-progress.show .scan-line-anim{display:block}
+
+/* STATS ROW — website stat-bar style */
+.stats-wrap{padding:0 48px 32px;border-bottom:1px solid var(--border)}
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--border);margin-top:0}
+.stat-card{padding:22px 24px;border-right:1px solid var(--border);position:relative;overflow:hidden;transition:background .2s}
+.stat-card:last-child{border-right:none}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat-card.c::before{background:var(--accent2)}.stat-card.h::before{background:var(--accent3)}.stat-card.m::before{background:var(--accent4)}.stat-card.l::before{background:var(--accent)}.stat-card.t::before{background:var(--muted)}
+.stat-card:hover{background:rgba(255,255,255,.02)}
+.stat-num{font-size:38px;font-weight:800;letter-spacing:-.04em;line-height:1;margin-bottom:6px;animation:countUp .4s ease both}
+.stat-num.c{color:var(--accent2)}.stat-num.h{color:var(--accent3)}.stat-num.m{color:var(--accent4)}.stat-num.l{color:var(--accent)}.stat-num.t{color:var(--text)}
+.stat-label{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.stats-actions{display:flex;gap:10px;padding:20px 48px 0}
+
+/* RESULTS SUMMARY BAR */
+.results-bar{padding:0 48px;display:none}
+
+/* ── SECTION HEADER ── */
+.sec-header{padding:40px 48px 24px;border-bottom:1px solid var(--border)}
+.sec-label{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.sec-label::after{content:'';flex:1;max-width:60px;height:1px;background:var(--border-bright)}
+.sec-title{font-size:clamp(28px,3vw,42px);font-weight:800;letter-spacing:-.03em;line-height:1.05;margin-bottom:8px}
+.sec-title .outline{color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.75)}
+.sec-sub{font-family:var(--font-mono);font-size:13px;color:var(--muted);line-height:1.65;max-width:560px}
+
+/* ── FINDINGS ── */
+.findings-outer{padding:24px 48px}
+.findings-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filter-btn{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:none;transition:all .2s}
+.filter-btn:hover{border-color:rgba(255,255,255,.15);color:var(--text)}
+.filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(99,255,180,.06)}
+.filter-btn.active.fc{border-color:var(--accent2);color:var(--accent2);background:rgba(255,77,109,.06)}
+.filter-btn.active.fh{border-color:var(--accent3);color:var(--accent3);background:rgba(255,209,102,.06)}
+.filter-btn.active.fm{border-color:var(--accent4);color:var(--accent4);background:rgba(77,166,255,.06)}
+.search-box{margin-left:auto;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:6px 14px;outline:none;width:210px;transition:border-color .2s}
+.search-box:focus{border-color:var(--accent)}
+.search-box::placeholder{color:var(--muted2)}
+.findings-list{display:flex;flex-direction:column;gap:2px}
+
+/* FINDING CARD — website style + expand */
+.finding-card{background:var(--surface);border:1px solid var(--border);cursor:none;transition:all .25s;overflow:hidden;position:relative;animation:slideIn .3s ease both}
+.finding-card:hover{border-color:rgba(255,255,255,.1);transform:translateX(3px)}
+.finding-card.expanded{border-color:var(--border-bright)}
+.finding-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.finding-card.CRITICAL::before{background:var(--accent2)}.finding-card.HIGH::before{background:var(--accent3)}.finding-card.MEDIUM::before{background:var(--accent4)}.finding-card.LOW::before{background:var(--accent)}.finding-card.INFO::before{background:var(--muted)}
+.finding-header{display:flex;align-items:center;gap:14px;padding:14px 18px 14px 20px}
+.sev-badge{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;flex-shrink:0}
+.sev-badge.CRITICAL{background:rgba(255,77,109,.15);color:var(--accent2);border:1px solid rgba(255,77,109,.3)}
+.sev-badge.HIGH{background:rgba(255,209,102,.1);color:var(--accent3);border:1px solid rgba(255,209,102,.25)}
+.sev-badge.MEDIUM{background:rgba(77,166,255,.1);color:var(--accent4);border:1px solid rgba(77,166,255,.25)}
+.sev-badge.LOW{background:rgba(99,255,180,.08);color:var(--accent);border:1px solid rgba(99,255,180,.2)}
+.sev-badge.INFO{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.dom-badge{font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;padding:3px 8px;border:1px solid var(--border);color:var(--muted2);flex-shrink:0}
+.ftitle-wrap{flex:1;min-width:0}
+.ftitle{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ffile{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:2px}
+.ftoggle{font-family:var(--font-mono);font-size:16px;color:var(--muted);transition:transform .25s,color .25s;flex-shrink:0;margin-left:4px}
+.finding-card.expanded .ftoggle{transform:rotate(45deg);color:var(--accent)}
+.finding-body{display:none;padding:0 20px 18px 20px;border-top:1px solid var(--border)}
+.finding-card.expanded .finding-body{display:block}
+.fdesc{font-family:var(--font-mono);font-size:12px;color:var(--muted);line-height:1.65;margin:14px 0}
+.fix-block{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);padding:12px 16px;margin-bottom:12px}
+.fix-label{font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.fix-text{font-family:var(--font-mono);font-size:12px;color:var(--text);line-height:1.6}
+.code-block{background:var(--bg);border:1px solid var(--border);padding:14px 16px;margin-bottom:12px;font-family:var(--font-mono);font-size:11.5px;color:var(--accent);white-space:pre-wrap;word-break:break-all;line-height:1.6;max-height:260px;overflow-y:auto;position:relative}
+.code-block::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.4}
+.factions{display:flex;gap:8px}
+
+/* ── ATTACK CHAINS ── */
+.chains-outer{padding:24px 48px}
+.chain-card{background:var(--surface);border:1px solid var(--border);padding:28px 32px;position:relative;overflow:hidden;transition:border-color .25s;margin-bottom:16px;animation:slideIn .3s ease both}
+.chain-card:hover{border-color:rgba(255,77,109,.3)}
+.chain-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent2),var(--accent3),transparent)}
+.chain-card-inner-glow{position:absolute;inset:0;background:radial-gradient(ellipse 60% 60% at 100% 0%,rgba(255,77,109,.04),transparent);pointer-events:none}
+.chain-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:16px}
+.chain-title{font-size:clamp(18px,2vw,24px);font-weight:800;letter-spacing:-.02em}
+.chain-score-wrap{text-align:right;flex-shrink:0}
+.chain-score-num{font-size:36px;font-weight:800;color:var(--accent2);line-height:1;letter-spacing:-.04em}
+.chain-score-unit{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.1em}
+.chain-desc{font-family:var(--font-mono);font-size:12.5px;color:var(--muted);line-height:1.65;margin-bottom:20px}
+.chain-steps{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.chain-step{display:flex;align-items:flex-start;gap:14px;font-family:var(--font-mono);font-size:12px;color:var(--text)}
+.step-num{width:22px;height:22px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;font-weight:700;color:var(--accent2)}
+.chain-scan-line{height:1px;background:linear-gradient(90deg,transparent,var(--accent2),transparent);margin:16px 0;opacity:.3}
+.chain-fix{background:rgba(99,255,180,.04);border:1px solid rgba(99,255,180,.15);padding:14px 18px;font-family:var(--font-mono);font-size:12.5px;color:var(--accent);line-height:1.65}
+.chain-fix-label{font-size:9px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;opacity:.7}
+.chain-domains{display:flex;gap:6px;margin-bottom:14px}
+.chain-dom-tag{font-family:var(--font-mono);font-size:9px;padding:2px 8px;border:1px solid var(--border);color:var(--muted2);letter-spacing:.08em}
+
+/* ── HISTORY ── */
+.history-outer{padding:24px 48px}
+.history-list{display:flex;flex-direction:column;gap:2px}
+.history-item{background:var(--surface);border:1px solid var(--border);padding:16px 20px;display:flex;align-items:center;gap:20px;cursor:none;transition:all .2s;position:relative;overflow:hidden;animation:slideIn .3s ease both}
+.history-item:hover{border-color:rgba(255,255,255,.1);transform:translateX(3px)}
+.history-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--muted2);transition:background .2s}
+.history-item:hover::before{background:var(--accent)}
+.h-repo{font-size:14px;font-weight:700;margin-bottom:3px}
+.h-meta{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.h-stats{display:flex;gap:12px;margin-left:auto}
+.h-stat{font-family:var(--font-mono);font-size:11px;font-weight:700}
+
+/* EMPTY STATE */
+.empty-state{padding:80px 40px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}
+.empty-icon{font-size:40px;opacity:.12}.empty-title{font-size:20px;font-weight:700;color:var(--muted);letter-spacing:-.01em}.empty-sub{font-family:var(--font-mono);font-size:12px;color:var(--muted2);max-width:340px;line-height:1.65}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;right:28px;z-index:9999;background:var(--surface);border:1px solid var(--border);padding:14px 20px;font-family:var(--font-mono);font-size:12px;color:var(--text);display:flex;align-items:center;gap:12px;transform:translateY(60px);opacity:0;transition:all .3s ease;max-width:400px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast::before{content:'';width:3px;align-self:stretch;flex-shrink:0}
+.toast.success::before{background:var(--accent)}.toast.error::before{background:var(--accent2)}.toast.info::before{background:var(--accent4)}
+
+/* ── SNIPPET 1: Trend indicator ── */
+.trend-bar{padding:12px 48px;border-bottom:1px solid var(--border);display:none;align-items:center;gap:16px;animation:fadeIn .3s ease}
+.trend-bar.show{display:flex}
+.trend-score{font-size:clamp(28px,3vw,42px);font-weight:800;letter-spacing:-.04em;line-height:1}
+.trend-score.improved{color:var(--accent)}.trend-score.regressed{color:var(--accent2)}.trend-score.unchanged{color:var(--accent4)}
+.trend-grade{font-size:48px;font-weight:800;opacity:.15;margin-left:auto;letter-spacing:-.04em}
+.trend-delta{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:4px}
+.trend-msg{font-family:var(--font-mono);font-size:12px;color:var(--muted);line-height:1.5;flex:1}
+
+/* ── SNIPPET 1: PR Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:8000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--surface);border:1px solid var(--border-bright);max-width:520px;width:90%;position:relative;animation:fadeUp .25s ease}
+.modal-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.6}
+.modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.modal-close{font-family:var(--font-mono);font-size:18px;color:var(--muted);cursor:none;background:none;border:none;transition:color .2s}
+.modal-close:hover{color:var(--accent)}
+.modal-body{padding:24px}
+.modal-notice{background:rgba(99,255,180,.04);border:1px solid rgba(99,255,180,.15);border-left:3px solid var(--accent);padding:12px 16px;margin-bottom:20px;font-family:var(--font-mono);font-size:11px;color:var(--muted);line-height:1.65}
+.modal-notice strong{color:var(--accent);display:block;margin-bottom:4px;font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+.modal-notice.warn{border-color:var(--accent3);border-left-color:var(--accent3);background:rgba(255,209,102,.04)}
+.modal-notice.warn strong{color:var(--accent3)}
+.modal-field{margin-bottom:16px}
+.modal-label{font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;display:block}
+.modal-input{width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:10px 14px;outline:none;transition:border-color .2s;box-sizing:border-box}
+.modal-input:focus{border-color:var(--accent)}
+.modal-input::placeholder{color:var(--muted2)}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+.pr-result{margin-top:16px;padding:14px;background:var(--bg2);border:1px solid var(--border);font-family:var(--font-mono);font-size:12px;display:none}
+.pr-result.show{display:block}
+.pr-result a{color:var(--accent);text-decoration:none}
+.pr-result a:hover{text-decoration:underline}
+
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--muted2)}::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+::selection{background:rgba(99,255,180,.2);color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="grid-bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+      <path d="M14 2L3 7.5V16C3 21 7.8 25.5 14 27C20.2 25.5 25 21 25 16V7.5L14 2Z" stroke="#63ffb4" stroke-width="1.5" fill="none"/>
+      <path d="M10 14L13 17L18 12" stroke="#63ffb4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="nav-wordmark">Xentinel<span>AI</span></div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-hackbadge">HACK'A'WAR · CODING AGENTS</div>
+    <button class="btn-secondary" onclick="window.open('card.html', '_blank')">Security flash cards→</button>
+    <button class="btn-secondary" onclick="window.open('comparison.html', '_blank')">Compare with CodeantAI→</button>
+    
+    <div class="nav-status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">CONNECTING</span>
+    </div>
+  </div>
+</nav>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-brand-label">Dashboard</div>
+      <div class="sidebar-brand-title">Security<br><span>Agent</span></div>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Scanner</div>
+    <div class="sidebar-item active" onclick="nav(this,'scan')">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M4.5 6.5l1.5 1.5 2.5-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      New Scan
+    </div>
+    <div class="sidebar-section">Results</div>
+    <div class="sidebar-item" onclick="nav(this,'findings')">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="1" width="11" height="11" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M3.5 4.5h6M3.5 6.5h6M3.5 8.5h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      Findings
+      <span class="sidebar-badge badge-muted" id="badge-findings">—</span>
+    </div>
+    <div class="sidebar-item" onclick="nav(this,'chains')">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5h2.5M8.5 6.5H11M5 4l1.5 2.5L5 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Attack Chains
+      <span class="sidebar-badge badge-red" id="badge-chains">—</span>
+    </div>
+    <div class="sidebar-item" onclick="nav(this,'history')">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 4v2.5l1.5 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      Scan History
+    </div>
+    <div class="sidebar-bottom">
+      <div class="api-indicator">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1"/></svg>
+        <span id="apiUrl">localhost:8000</span>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <!-- ── SCAN ─────────────────────────────────────────────────── -->
+    <section class="section active" id="section-scan">
+      <div class="scan-hero">
+        <div class="scan-hero-tag">Automated Security Review</div>
+        <h1 class="scan-hero-title">
+          Stop breaches<br>
+          <span class="outline">before they</span><br>
+          <span class="green">ship.</span>
+        </h1>
+        <p class="scan-hero-sub">Code · Infrastructure · IAM — scanned in one pass, fixed by AI.</p>
+      </div>
+
+      <div class="scan-input-area">
+        <div class="scan-card">
+          <div class="terminal-header">
+            <div class="terminal-dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+            <div class="terminal-title">xentinel-agent · scan input</div>
+          </div>
+          <div class="scan-card-body">
+            <div class="scan-tabs">
+              <div class="scan-tab active" onclick="switchTab(this,'github')">GitHub URL</div>
+              <div class="scan-tab"style="color:" onclick="switchTab(this,'upload')">Upload ZIP</div>
+            </div>
+            <div id="tab-github">
+              <div class="scan-row">
+                <input class="scan-input" id="githubUrl" type="text" placeholder="https://github.com/owner/repository" onkeydown="if(event.key==='Enter')startScan()">
+                <button class="btn-primary" id="scanBtn" onclick="startScan()">Scan Repo →</button>
+              </div>
+            </div>
+            <div id="tab-upload" style="display:none">
+              <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event)">
+                <input type="file" id="fileInput" accept=".zip" style="display:none" onchange="handleFile(event)">
+                <div class="drop-text">Drop <span>.zip</span> here or <span>click to browse</span></div>
+                <div class="drop-file" id="dropFileName"></div>
+              </div>
+              <div style="margin-top:12px"><button class="btn-primary"style="color:#63ffb4;background-color:transparent;border:1px solid #63ffb4;"  id="uploadBtn" onclick="startUpload()" disabled>Scan ZIP →</button></div>
+            </div>
+            <label class="scan-opt"><input type="checkbox" id="skipAi"> Skip AI enrichment (faster, no fixes)</label>
+            <div class="scan-progress" id="scanProgress">
+              <div class="scan-line-anim"></div>
+              <div class="progress-steps">
+                <div class="pstep" id="ps-clone"><div class="pdot"></div><span class="psep">01</span><span>Cloning repository</span></div>
+                <div class="pstep" id="ps-code"><div class="pdot"></div><span class="psep">02</span><span>Code scanner — Semgrep + OWASP Top 10</span></div>
+                <div class="pstep" id="ps-iac"><div class="pdot"></div><span class="psep">03</span><span>IaC scanner — Checkov + CIS AWS Benchmark</span></div>
+                <div class="pstep" id="ps-iam"><div class="pdot"></div><span class="psep">04</span><span>IAM analyzer — privilege escalation graph</span></div>
+                <div class="pstep" id="ps-ai"><div class="pdot"></div><span class="psep">05</span><span>AI remediation — AWS Bedrock (groq llama-3.3-70b-versatile /Claude Sonnet 4.6)</span></div>
+                <div class="pstep" id="ps-chains"><div class="pdot"></div><span class="psep">06</span><span>Attack chain correlation</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SNIPPET 2: Trend bar — shown after scan -->
+      <div class="trend-bar" id="trendBar">
+        <div>
+          <div class="trend-score" id="trendScore">—</div>
+          <div class="trend-delta" id="trendDelta"></div>
+        </div>
+        <div class="trend-msg" id="trendMsg"></div>
+        <div class="trend-grade" id="trendGrade">—</div>
+      </div>
+
+      <!-- Stats — shown after scan, website stats-bar style -->
+      <div id="statsWrap" style="display:none">
+        <div class="stats-wrap">
+          <div class="stats-row">
+            <div class="stat-card c"><div class="stat-num c" id="sc">0</div><div class="stat-label">Critical</div></div>
+            <div class="stat-card h"><div class="stat-num h" id="sh">0</div><div class="stat-label">High</div></div>
+            <div class="stat-card m"><div class="stat-num m" id="sm">0</div><div class="stat-label">Medium</div></div>
+            <div class="stat-card l"><div class="stat-num l" id="sl">0</div><div class="stat-label">Low</div></div>
+            <div class="stat-card t"><div class="stat-num t" id="st">0</div><div class="stat-label">Total</div></div>
+          </div>
+          <!-- SNIPPET 3: PR button added alongside existing buttons -->
+          <div class="stats-actions" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:20px 48px 0">
+            <button class="btn-primary" onclick="goSection('findings')">View Findings →</button>
+            <button class="btn-secondary" onclick="goSection('chains')">Attack Chains →</button>
+            <button class="btn-secondary" onclick="downloadReport()">↓ Download Report</button>
+            <button class="btn-secondary" onclick="launchSimulation()">🧨 Simulate Attack RED-TEAM</button>
+            <button class="btn-secondary" onclick="openPRModal()">Generate Fix PR</button>
+            <button class="btn-secondary" onclick="window.open(`${API}/scan/${currentScan.scan_id}/pdf`)">↓ PDF Report</button>
+            <button class="btn-secondary" onclick="window.open('/insights.html')"> Insights →</button>
+            <button class="btn-secondary" onclick="window.open('/compliance.html')">Compliance & Portfolio →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FINDINGS ─────────────────────────────────────────────── -->
+    <section class="section" id="section-findings">
+      <div class="sec-header">
+        <div class="sec-label">Results</div>
+        <h2 class="sec-title">Security <span class="outline">Findings.</span></h2>
+        <p class="sec-sub" id="findingsSub">Run a scan to surface vulnerabilities across code, infrastructure, and IAM.</p>
+      </div>
+      <div class="findings-outer">
+        <div class="findings-toolbar" id="findingsToolbar" style="display:none">
+          <button class="filter-btn active" onclick="setFilter(this,'ALL')">All</button>
+          <button class="filter-btn fc" onclick="setFilter(this,'CRITICAL')">Critical</button>
+          <button class="filter-btn fh" onclick="setFilter(this,'HIGH')">High</button>
+          <button class="filter-btn fm" onclick="setFilter(this,'MEDIUM')">Medium</button>
+          <button class="filter-btn" onclick="setFilter(this,'LOW')">Low</button>
+          <button class="filter-btn" style="margin-left:8px" onclick="setFilter(this,'CODE')">Code</button>
+          <button class="filter-btn" onclick="setFilter(this,'IAC')">IaC</button>
+          <button class="filter-btn" onclick="setFilter(this,'IAM')">IAM</button>
+          <input class="search-box" id="searchBox" placeholder="Search findings..." oninput="renderFindings()">
+        </div>
+        <div class="findings-list" id="findingsList">
+          <div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No scan yet</div><div class="empty-sub">Run a scan from the New Scan tab to see findings here.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── ATTACK CHAINS ─────────────────────────────────────────── -->
+    <section class="section" id="section-chains">
+      <div class="sec-header">
+        <div class="sec-label">Threat Intelligence</div>
+        <h2 class="sec-title">Attack <span class="outline">Chains.</span></h2>
+        <p class="sec-sub">AI-identified multi-domain breach paths — where code, infrastructure, and IAM vulnerabilities combine into a complete exploit scenario.</p>
+      </div>
+      <div class="chains-outer">
+        <div id="chainsList">
+          <div class="empty-state"><div class="empty-icon">⛓</div><div class="empty-title">No attack chains</div><div class="empty-sub">Run a scan. If findings across domains compound into a breach path, they'll appear here.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── HISTORY ─────────────────────────────────────────────────── -->
+    <section class="section" id="section-history">
+      <div class="sec-header">
+        <div class="sec-label">Audit Trail</div>
+        <h2 class="sec-title">Scan <span class="outline">History.</span></h2>
+        <p class="sec-sub">All previous scans — persisted locally and in AWS DynamoDB.</p>
+      </div>
+      <div class="history-outer">
+        <div class="history-list" id="historyList">
+          <div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No history yet</div><div class="empty-sub">Completed scans will appear here automatically.</div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- SNIPPET 4: PR Modal -->
+<div class="modal-overlay" id="prModal" onclick="if(event.target===this)closePRModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Generate Fix Pull Request</div>
+      <button class="modal-close" onclick="closePRModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-notice">
+        <strong>How this works</strong>
+        XentinelAI creates a new branch in your repo and opens a PR applying AI-generated code patches for all findings with available fixes.
+      </div>
+      <div class="modal-notice warn">
+        <strong>⚠ Requirements &amp; Limitations</strong>
+        Requires a GitHub Personal Access Token with <code>repo</code> write scope. Only works on repos <em>you own or have push access to</em>.
+        AI fixes are best-effort snippet replacements — always review before merging.
+        <br><br>
+        <strong>Demo note:</strong> Works out of the box on <code>xentinel-demo-repo</code>. For other repos, token must have push access.
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">GitHub Repository URL</label>
+        <input class="modal-input" id="prRepoUrl" type="text"
+          placeholder="https://github.com/your-org/your-repo"
+          value="">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">GitHub Personal Access Token</label>
+        <input class="modal-input" id="prToken" type="password"
+          placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);margin-top:6px">
+          Token is sent directly to the API and never stored. Generate at GitHub → Settings → Developer Settings → PAT.
+        </div>
+      </div>
+      <div class="pr-result" id="prResult"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closePRModal()">Cancel</button>
+      <button class="btn-primary" id="prBtn" onclick="submitPR()">Generate PR →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.XENTINEL_API || 'http://localhost:8000';
+document.getElementById('apiUrl').textContent = API.replace('http://','').replace('https://','');
+
+let currentScan = null, currentFilter = 'ALL', selectedFile = null;
+
+// ── CURSOR ──────────────────────────────────────────────────────────
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX; my=e.clientY;
+  cur.style.left=mx+'px'; cur.style.top=my+'px';
+});
+(function tick(){
+  rx+=(mx-rx)*.12; ry+=(my-ry)*.12;
+  ring.style.left=rx+'px'; ring.style.top=ry+'px';
+  requestAnimationFrame(tick);
+})();
+document.querySelectorAll('button,.sidebar-item,.finding-card,.chain-card,.history-item,.filter-btn,.scan-tab,.drop-zone,.stat-card').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{ring.style.width='52px';ring.style.height='52px'});
+  el.addEventListener('mouseleave',()=>{ring.style.width='36px';ring.style.height='36px'});
+});
+
+// ── NAV ─────────────────────────────────────────────────────────────
+function nav(el, s) {
+  document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('section-'+s).classList.add('active');
+  if(s==='history') loadHistory();
+}
+function goSection(s) {
+  const el = document.querySelector('.sidebar-item[onclick*="\''+s+'\'"]');
+  if(el) nav(el, s);
+}
+
+// ── TAB ─────────────────────────────────────────────────────────────
+function switchTab(el, tab) {
+  document.querySelectorAll('.scan-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-github').style.display = tab==='github' ? '' : 'none';
+  document.getElementById('tab-upload').style.display = tab==='upload' ? '' : 'none';
+  document.getElementById('dropZone').classList.toggle('show', tab==='upload');
+}
+
+// ── FILE ─────────────────────────────────────────────────────────────
+function handleFile(e) {
+  const f = e.target.files[0]; if(!f) return;
+  selectedFile = f;
+  document.getElementById('dropFileName').textContent = '📦 '+f.name+' ('+(f.size/1024).toFixed(0)+' KB)';
+  document.getElementById('uploadBtn').disabled = false;
+}
+function handleDrop(e) {
+  e.preventDefault(); document.getElementById('dropZone').classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if(f && f.name.endsWith('.zip')) {
+    selectedFile=f; document.getElementById('dropFileName').textContent='📦 '+f.name;
+    document.getElementById('uploadBtn').disabled=false;
+  } else toast('Only .zip files supported','error');
+}
+
+// ── STATUS ───────────────────────────────────────────────────────────
+function setStatus(s, t) {
+  document.getElementById('statusDot').className='status-dot '+s;
+  document.getElementById('statusText').textContent=t;
+}
+
+// ── STEPS ────────────────────────────────────────────────────────────
+const STEPS=['clone','code','iac','iam','ai','chains'];
+function resetSteps(){STEPS.forEach(s=>{const el=document.getElementById('ps-'+s);if(el)el.className='pstep';})}
+function setStep(id,st){const el=document.getElementById('ps-'+id);if(el)el.className='pstep '+st;}
+
+// ── SCANS ────────────────────────────────────────────────────────────
+async function startScan() {
+  const url=document.getElementById('githubUrl').value.trim();
+  if(!url){toast('Enter a GitHub URL','error');return}
+  await runScan('/scan/github',JSON.stringify({github_url:url,skip_ai:document.getElementById('skipAi').checked}),{'Content-Type':'application/json'});
+}
+async function startUpload() {
+  if(!selectedFile){toast('Select a zip file','error');return}
+  const fd=new FormData(); fd.append('file',selectedFile);
+  await runScan('/scan/upload?skip_ai='+document.getElementById('skipAi').checked,fd,{});
+}
+
+async function runScan(endpoint, body, headers) {
+  document.getElementById('statsWrap').style.display='none';
+  document.getElementById('trendBar').classList.remove('show');
+  document.getElementById('scanProgress').classList.add('show');
+  resetSteps(); setStatus('scanning','SCANNING');
+  document.getElementById('scanBtn').disabled=true;
+  const ub=document.getElementById('uploadBtn'); if(ub) ub.disabled=true;
+
+  let si=0; setStep(STEPS[si],'running');
+  const ticker=setInterval(()=>{
+    if(si<STEPS.length-1){setStep(STEPS[si],'done');si++;setStep(STEPS[si],'running');}
+  }, 2400);
+
+  try {
+    const resp=await fetch(API+endpoint,{method:'POST',headers:Object.keys(headers).length?headers:undefined,body});
+    clearInterval(ticker);
+    if(!resp.ok){const e=await resp.json().catch(()=>({detail:resp.statusText}));throw new Error(e.detail||'Scan failed');}
+    const data=await resp.json();
+    STEPS.forEach(s=>setStep(s,'done'));
+    currentScan=data;
+    renderStats(data.stats||{});
+    // SNIPPET 6: wire trend into scan complete
+    if(data.trend) renderTrend(data.trend);
+    renderFindings(); renderChains(); updateBadges();
+    document.getElementById('statsWrap').style.display='';
+    setStatus('live','COMPLETE');
+    toast('Scan complete — '+(data.stats?.total||0)+' findings','success');
+  } catch(e) {
+    clearInterval(ticker); setStep(STEPS[si],'error');
+    setStatus('error','ERROR'); toast(e.message||'Scan failed','error');
+  } finally {
+    document.getElementById('scanBtn').disabled=false;
+    const ub2=document.getElementById('uploadBtn'); if(ub2&&selectedFile) ub2.disabled=false;
+  }
+}
+
+// ── STATS ────────────────────────────────────────────────────────────
+function renderStats(s) {
+  ['sc','sh','sm','sl','st'].forEach((id,i)=>{
+    const keys=['critical','high','medium','low','total'];
+    const el=document.getElementById(id); if(el) el.textContent=s[keys[i]]||0;
+  });
+}
+
+// ── FILTER ───────────────────────────────────────────────────────────
+function setFilter(el, f) {
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); currentFilter=f; renderFindings();
+}
+
+// ── FINDINGS ─────────────────────────────────────────────────────────
+function renderFindings() {
+  const list=document.getElementById('findingsList');
+  const sub=document.getElementById('findingsSub');
+  const toolbar=document.getElementById('findingsToolbar');
+  if(!currentScan?.findings?.length){
+    toolbar.style.display='none';
+    list.innerHTML=emptyHTML('🔍','No scan yet','Run a scan from the New Scan tab.');return;
+  }
+  toolbar.style.display='';
+  const q=(document.getElementById('searchBox').value||'').toLowerCase();
+  const doms=['CODE','IAC','IAM'];
+  const filtered=currentScan.findings.filter(f=>{
+    const sm=currentFilter==='ALL'||(!doms.includes(currentFilter)&&f.severity===currentFilter);
+    const dm=doms.includes(currentFilter)?f.domain===currentFilter:true;
+    const qm=!q||f.title.toLowerCase().includes(q)||(f.file||'').toLowerCase().includes(q)||f.description.toLowerCase().includes(q);
+    return (sm||dm)&&qm;
+  });
+  sub.textContent=filtered.length+' finding'+(filtered.length!==1?'s':'')+' · '+esc(currentScan.repo||'');
+  if(!filtered.length){list.innerHTML=emptyHTML('✓','No matches','Try a different filter or search term.');return;}
+  list.innerHTML=filtered.map((f,i)=>`
+    <div class="finding-card ${esc(f.severity)}" id="fc-${esc(f.id)}" onclick="toggleCard('${esc(f.id)}')" style="animation-delay:${i*0.04}s">
+      <div class="finding-header">
+        <span class="sev-badge ${esc(f.severity)}">${esc(f.severity)}</span>
+        <span class="dom-badge">${esc(f.domain)}</span>
+        <div class="ftitle-wrap">
+          <div class="ftitle">${esc(f.title)}</div>
+          <div class="ffile">${f.file?esc(f.file)+(f.line?':'+f.line:''):'—'}</div>
+        </div>
+        <div class="ftoggle">+</div>
+      </div>
+      <div class="finding-body">
+        <div class="fdesc">${esc(f.description)}</div>
+        ${f.fix_hint?`<div class="fix-block"><div class="fix-label">Recommended Fix</div><div class="fix-text">${esc(f.fix_hint)}</div></div>`:''}
+        ${f.fixed_code?`<div class="fix-label" style="font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px">Patched Code</div><div class="code-block">${esc(f.fixed_code)}</div>`:''}
+        ${f.cwe?`<div style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);margin-bottom:10px">${esc(f.cwe)}</div>`:''}
+        <div class="factions">
+          ${f.fixed_code?`<button class="btn-primary" style="font-size:10px;padding:8px 16px" onclick="event.stopPropagation();dlFix('${esc(f.id)}')">↓ Download Fix</button>`:''}
+          <button class="btn-secondary" style="font-size:10px;padding:7px 14px" onclick="event.stopPropagation();copyFinding('${esc(f.id)}')">Copy</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleCard(id){const el=document.getElementById('fc-'+id);if(el)el.classList.toggle('expanded');}
+
+// ── CHAINS ───────────────────────────────────────────────────────────
+function renderChains() {
+  const list=document.getElementById('chainsList');
+  if(!currentScan?.attack_chains?.length){
+    list.innerHTML=emptyHTML('⛓','No attack chains','No multi-domain breach paths detected. That\'s a good sign.');return;
+  }
+  list.innerHTML=currentScan.attack_chains.map((c,i)=>{
+    const domSet=new Set();
+    (c.finding_ids||[]).forEach(id=>{const f=currentScan.findings.find(x=>x.id===id);if(f)domSet.add(f.domain);});
+    return `<div class="chain-card" style="animation-delay:${i*0.1}s">
+      <div class="chain-card-inner-glow"></div>
+      <div class="chain-hd">
+        <div class="chain-title">${esc(c.title)}</div>
+        <div class="chain-score-wrap"><div class="chain-score-num">${c.risk_score}</div><div class="chain-score-unit">RISK SCORE</div></div>
+      </div>
+      <div class="chain-domains">${[...domSet].map(d=>`<span class="chain-dom-tag">${esc(d)}</span>`).join('')}</div>
+      <div class="chain-desc">${esc(c.description)}</div>
+      <div class="chain-steps">${(c.steps||[]).map((s,j)=>`<div class="chain-step"><div class="step-num">${j+1}</div><span>${esc(s)}</span></div>`).join('')}</div>
+      <div class="chain-scan-line"></div>
+      <div class="chain-fix"><div class="chain-fix-label">Priority Fix</div>${esc(c.remediation)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── BADGES ───────────────────────────────────────────────────────────
+function updateBadges() {
+  if(!currentScan) return;
+  document.getElementById('badge-findings').textContent=currentScan.stats?.total||0;
+  document.getElementById('badge-chains').textContent=currentScan.attack_chains?.length||0;
+}
+
+// ── HISTORY ──────────────────────────────────────────────────────────
+async function loadHistory() {
+  const list=document.getElementById('historyList');
+  list.innerHTML=emptyHTML('⏳','Loading...','');
+  try {
+    const resp=await fetch(API+'/scans'); if(!resp.ok) throw new Error();
+    const scans=await resp.json();
+    if(!scans.length){list.innerHTML=emptyHTML('📋','No history','Scans appear here after they complete.');return;}
+    list.innerHTML=scans.map((s,i)=>`
+      <div class="history-item" onclick="loadScan('${esc(s.scan_id)}')" style="animation-delay:${i*0.04}s">
+        <div>
+          <div class="h-repo">${esc(s.repo)}</div>
+          <div class="h-meta">${esc(s.scan_id)} · ${new Date(s.scanned_at).toLocaleString()}</div>
+        </div>
+        <div class="h-stats">
+          <span class="h-stat" style="color:var(--accent2)">${s.stats?.critical||0}C</span>
+          <span class="h-stat" style="color:var(--accent3)">${s.stats?.high||0}H</span>
+          <span class="h-stat" style="color:var(--accent4)">${s.stats?.medium||0}M</span>
+          <span class="h-stat" style="color:var(--muted)">${s.stats?.total||0} total</span>
+        </div>
+      </div>`).join('');
+  } catch{list.innerHTML=emptyHTML('⚠','Could not load','Make sure the API is running at '+API);}
+}
+
+async function loadScan(scanId) {
+  try {
+    const resp=await fetch(API+'/scan/'+scanId); if(!resp.ok) throw new Error();
+    currentScan=await resp.json();
+    renderStats(currentScan.stats||{});
+    // SNIPPET 6: wire trend into loadScan
+    if(currentScan.trend) renderTrend(currentScan.trend);
+    renderFindings(); renderChains(); updateBadges();
+    document.getElementById('statsWrap').style.display='';
+    goSection('findings'); toast('Loaded: '+currentScan.repo,'info');
+  } catch{toast('Failed to load scan','error');}
+}
+
+// ── DOWNLOADS ────────────────────────────────────────────────────────
+function downloadReport(){
+  if(!currentScan) return;
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([JSON.stringify(currentScan,null,2)],{type:'application/json'})),download:`xentinel-${currentScan.scan_id}.json`});
+  a.click();
+}
+function dlFix(id){
+  if(!currentScan) return;
+  const f=currentScan.findings.find(x=>x.id===id); if(!f?.fixed_code) return;
+  const ext=f.file?f.file.split('.').pop():'txt';
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([f.fixed_code],{type:'text/plain'})),download:`fix-${id}.${ext}`});
+  a.click(); toast('Fix downloaded','success');
+}
+function copyFinding(id){
+  if(!currentScan) return;
+  const f=currentScan.findings.find(x=>x.id===id); if(!f) return;
+  navigator.clipboard.writeText(`[${f.severity}] ${f.title}\nDomain: ${f.domain}\nFile: ${f.file||'N/A'}\n\n${f.description}\n\nFix: ${f.fix_hint||'N/A'}`).then(()=>toast('Copied','info'));
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function emptyHTML(icon,title,sub){return`<div class="empty-state"><div class="empty-icon">${icon}</div><div class="empty-title">${title}</div><div class="empty-sub">${sub}</div></div>`;}
+
+// ── TOAST ────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg,type='info'){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast '+type+' show';
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+// ── SNIPPET 5: Trend ──────────────────────────────────────────────────
+function renderTrend(trend) {
+  if (!trend) return;
+  const bar   = document.getElementById('trendBar');
+  const score = document.getElementById('trendScore');
+  const delta = document.getElementById('trendDelta');
+  const msg   = document.getElementById('trendMsg');
+  const grade = document.getElementById('trendGrade');
+
+  score.textContent = trend.current_score ?? '—';
+  grade.textContent = trend.current_grade ?? '—';
+  msg.textContent   = trend.message       ?? '';
+
+  score.className = 'trend-score ' + (trend.direction || 'unchanged');
+
+  if (trend.direction === 'first_scan') {
+    delta.textContent = 'First scan — baseline established';
+  } else if (trend.direction === 'improved') {
+    delta.textContent = `▼ ${Math.abs(trend.delta)} pts improved vs last scan (was ${trend.previous_score})`;
+  } else if (trend.direction === 'regressed') {
+    delta.textContent = `▲ ${trend.delta} pts worse vs last scan (was ${trend.previous_score})`;
+  } else {
+    delta.textContent = 'No change since last scan';
+  }
+
+  bar.classList.add('show');
+}
+
+// ── SNIPPET 5: PR Modal ───────────────────────────────────────────────
+function openPRModal() {
+  if (!currentScan) { toast('Run a scan first', 'error'); return; }
+  const urlInput = document.getElementById('prRepoUrl');
+  if (currentScan.repo && !urlInput.value) {
+    urlInput.value = '';
+  }
+  document.getElementById('prResult').classList.remove('show');
+  document.getElementById('prModal').classList.add('show');
+}
+
+function closePRModal() {
+  document.getElementById('prModal').classList.remove('show');
+  document.getElementById('prBtn').disabled = false;
+  document.getElementById('prBtn').textContent = 'Generate PR →';
+}
+
+async function submitPR() {
+  if (!currentScan) { toast('No scan loaded', 'error'); return; }
+
+  const repoUrl = document.getElementById('prRepoUrl').value.trim();
+  const token   = document.getElementById('prToken').value.trim();
+
+  if (!repoUrl) { toast('Enter a GitHub repository URL', 'error'); return; }
+  if (!token)   { toast('Enter a GitHub Personal Access Token', 'error'); return; }
+  if (!repoUrl.includes('github.com')) { toast('URL must be a github.com repository', 'error'); return; }
+
+  const btn = document.getElementById('prBtn');
+  btn.disabled    = true;
+  btn.textContent = 'Creating PR…';
+
+  const resultDiv = document.getElementById('prResult');
+  resultDiv.classList.remove('show');
+
+  try {
+    const resp = await fetch(`${API}/scan/${currentScan.scan_id}/create-pr`, {
+      method:  'POST',
+      headers: {'Content-Type': 'application/json'},
+      body:    JSON.stringify({
+        github_url:   repoUrl,
+        github_token: token,
+        finding_ids:  [],
+      }),
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      resultDiv.innerHTML = `<span style="color:var(--accent2)">Error: ${esc(data.detail || 'PR creation failed')}</span>`;
+      resultDiv.classList.add('show');
+      toast('PR creation failed', 'error');
+      return;
+    }
+
+    const patchedList = (data.files_patched || [])
+      .map(f => `<div style="margin:2px 0">✓ <code>${esc(f.file)}</code> — ${f.fixes_applied} fix(es)</div>`)
+      .join('');
+    const errorList = (data.errors || [])
+      .map(e => `<div style="color:var(--accent3);margin:2px 0">⚠ <code>${esc(e.file)}</code>: ${esc(e.error)}</div>`)
+      .join('');
+
+    resultDiv.innerHTML = `
+      <div style="color:var(--accent);font-weight:700;margin-bottom:10px">✓ Pull Request Created</div>
+      <div style="margin-bottom:10px"><a href="${esc(data.pr_url)}" target="_blank" rel="noopener">${esc(data.pr_url)}</a></div>
+      <div style="color:var(--muted);margin-bottom:6px">Branch: <code>${esc(data.branch)}</code></div>
+      ${patchedList}
+      ${errorList}
+    `;
+    resultDiv.classList.add('show');
+    toast('PR created — review before merging', 'success');
+
+  } catch (e) {
+    resultDiv.innerHTML = `<span style="color:var(--accent2)">Network error: ${esc(String(e))}</span>`;
+    resultDiv.classList.add('show');
+    toast('Network error', 'error');
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = 'Generate PR →';
+  }
+}
+// ── SIMULATION ───────────────────────────────────────────────────────────────
+function launchSimulation() {
+  if (!currentScan) { toast('Run a scan first', 'error'); return; }
+  if (!currentScan.attack_chains?.length) { toast('No attack chains to simulate', 'error'); return; }
+  sessionStorage.setItem('xentinel_scan', JSON.stringify(currentScan));
+  sessionStorage.setItem('xentinel_repo_path', currentScan.repo_path || '');
+  window.open('/simulation.html', '_blank');
+}
+
+
+
+// ── INIT ─────────────────────────────────────────────────────────────
+(async function init(){
+  try{
+    const resp=await fetch(API+'/health',{signal:AbortSignal.timeout(4000)});
+    if(resp.ok){const d=await resp.json();setStatus('live',d.aws_enabled?'LIVE ·AWS ':'LIVE · LOCAL');}
+    else setStatus('error','API ERROR');
+  } catch{setStatus('error','API OFFLINE');toast('API not reachable at '+API,'error');}
+})();
+</script>
+</body>
+</html>

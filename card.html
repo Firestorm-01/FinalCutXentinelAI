@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Flashcard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --accent:#63ffb4;
+  --accent2:#ff4d6d;
+  --accent3:#ffd166;
+  --accent4:#4da6ff;
+}
+
+body{
+  margin:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#000;
+  font-family:'Syne', sans-serif;
+  font-weight: 800;
+  color:#fff;
+}
+
+/* Container */
+.container{
+  text-align:center;
+}
+
+/* Card */
+.card{
+  /* Slightly enlarged to perfectly fit the highly technical data */
+  width:380px;
+  height:320px;
+  perspective:1200px;
+  margin-bottom:24px;
+  cursor:pointer;
+}
+
+.inner{
+  width:100%;
+  height:100%;
+  position:relative;
+  transition:transform 0.6s ease;
+  transform-style:preserve-3d;
+}
+
+.card.flip .inner{
+  transform:rotateY(180deg);
+}
+
+/* Faces */
+.face{
+  position:absolute;
+  width:100%;
+  height:100%;
+  background:#0a0a0a;
+  border-radius:18px;
+  padding:26px;
+  backface-visibility:hidden;
+  border:1px solid rgba(255,255,255,0.08);
+  box-shadow:0 15px 50px rgba(0,0,0,0.9);
+  box-sizing: border-box;
+}
+
+/* FRONT */
+.front{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+}
+
+.front h2{
+  font-size:28px;
+  margin-bottom:10px;
+  color:#ffffff;
+  text-align: center;
+}
+
+.front p{
+  font-size:14px;
+  color:#ffffff;
+  opacity: 0.8;
+}
+
+/* BACK */
+.back{
+  transform:rotateY(180deg);
+  text-align:left;
+  font-size:14px;
+  line-height:1.5;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.content-text {
+  color: #ffffff;
+  font: normal normal 400 14px/1.5 'Roboto', sans-serif;
+  font-size: 14px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+/* Labels */
+.label{
+  font-size:12px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  margin-top:4px;
+  margin-bottom:4px;
+  font-weight: 800;
+}
+
+.label.what{color:var(--accent);}
+.label.risk{color:var(--accent2);}
+.label.fix{color:var(--accent3);}
+
+/* Button */
+button{
+  background:#111;
+  border:1px solid rgba(255,255,255,0.15);
+  color:white;
+  padding:14px 28px;
+  border-radius:14px;
+  cursor:pointer;
+  font-family:'Syne', sans-serif;
+  font-weight:800;
+  font-size: 15px;
+  text-transform: uppercase;
+  transition:0.25s;
+}
+
+button:hover{
+  border-color:var(--accent4);
+  box-shadow:0 0 16px rgba(77, 166, 255, 0.4);
+  color: var(--accent4);
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="card" id="card">
+    <div class="inner">
+      
+      <div class="face front">
+        <h2 id="title">Click Next</h2>
+        <p>Tap card to flip</p>
+      </div>
+
+      <div class="face back">
+        <div class="label what">What</div>
+        <div id="what" class="content-text">-</div>
+
+        <div class="label risk">Risk</div>
+        <div id="risk" class="content-text">-</div>
+
+        <div class="label fix">Fix</div>
+        <div id="fix" class="content-text">-</div>
+      </div>
+
+    </div>
+  </div>
+
+  <button onclick="nextCard()">Next Card</button>
+
+</div>
+
+<script>
+// 40 Highly Technical, Specific, and Actionable Topics
+const topics = [
+  {title:"IAM Misconfig", what:"Identity & Access Management governs user and service account permissions.", risk:"Over-provisioning enables lateral movement and privilege escalation upon compromise.", fix:"Enforce Principle of Least Privilege (PoLP), RBAC, and strict MFA policies."},
+  {title:"IaC Flaws", what:"Infrastructure as Code automates cloud provisioning using config files.", risk:"Misconfigurations in templates automatically propagate vulnerabilities across environments.", fix:"Implement shift-left security, use static analysis tools (tfsec, Checkov), and peer review."},
+  {title:"SQL Injection", what:"Malicious SQL statements are inserted into entry fields for execution.", risk:"Attackers can read, modify, or delete backend database records and bypass auth.", fix:"Use parameterized queries, prepared statements, and ORM libraries. Avoid dynamic SQL."},
+  {title:"Hardcoded Secrets", what:"Cryptographic keys or API tokens embedded directly in source code.", risk:"Source code exposure leads to immediate, unauthorized access to sensitive systems.", fix:"Utilize secret managers (AWS Secrets Manager, Vault) and inject via environment variables."},
+  {title:"XSS", what:"Cross-Site Scripting injects malicious client-side scripts into viewed web pages.", risk:"Enables session hijacking, cookie theft, and defacement of the application.", fix:"Implement strict Context-Aware Output Encoding and enforce Content Security Policy (CSP)."},
+  {title:"CSRF", what:"Cross-Site Request Forgery forces an authenticated user to execute unwanted actions.", risk:"Attackers can perform state-changing requests like fund transfers or password changes.", fix:"Implement anti-CSRF tokens (Synchronizer Token Pattern) and utilize SameSite cookie attributes."},
+  {title:"Outdated Dependencies", what:"Using third-party libraries or frameworks with published vulnerabilities (CVEs).", risk:"Provides attackers with publicly documented exploit paths into the application.", fix:"Automate SCA (Software Composition Analysis) scanning and enforce regular patch cycles."},
+  {title:"S3 Public Access", what:"Cloud storage buckets inadvertently configured with public read/write permissions.", risk:"Massive data leaks, unauthorized data modification, or hosting of malicious payloads.", fix:"Enable 'Block Public Access' at the account level and restrict policies to specific IAM roles."},
+  {title:"Open Security Groups", what:"Network firewalls allowing unrestricted inbound traffic (e.g., 0.0.0.0/0 on port 22).", risk:"Exposes administrative interfaces directly to brute-force attacks from the public internet.", fix:"Restrict inbound CIDR blocks to known IPs, use Bastion hosts, or implement Zero Trust access."},
+  {title:"Unencrypted Storage", what:"Data at rest is stored in plaintext on disks, databases, or object storage.", risk:"Physical theft of media or unauthorized logical access results in immediate data compromise.", fix:"Enable AES-256 encryption at rest using a Key Management Service (KMS) and rotate keys."},
+  {title:"Public Database", what:"Database instances assigned public IP addresses and exposed to the internet.", risk:"Direct target for brute-force attacks, vulnerability scanning, and automated botnets.", fix:"Deploy databases in private subnets and access via secure application tiers or VPC peering."},
+  {title:"Logging Gaps", what:"Insufficient auditing of critical system events, access logs, and error states.", risk:"Severely hinders incident response, forensics, and detection of ongoing breaches.", fix:"Centralize logs into a SIEM, monitor anomalies, and retain immutable logs for compliance."},
+  {title:"Wildcard Permissions", what:"Using '*' in IAM policies, granting unrestricted access to resources or actions.", risk:"A compromised service or user inherits God-mode capabilities across the infrastructure.", fix:"Scope down IAM policies to specific Resource ARNs and explicitly define allowed Actions."},
+  {title:"Privilege Escalation", what:"Exploiting bugs or misconfigurations to gain elevated (admin/root) system access.", risk:"Attackers bypass standard controls, disable security tools, and gain full system dominion.", fix:"Regularly audit sudoers, patch kernel vulnerabilities, and monitor administrative API calls."},
+  {title:"Unused Roles", what:"Stale or orphaned IAM roles and service accounts left active in the environment.", risk:"Increases the attack surface; forgotten credentials can be harvested and abused unnoticed.", fix:"Implement automated lifecycle management to detect and deprecate inactive credentials."},
+  {title:"SSRF", what:"Server-Side Request Forgery tricks a server into making HTTP requests to internal domains.", risk:"Bypasses external firewalls, allowing attackers to scan internal networks or steal metadata.", fix:"Enforce strict allowlists for outbound URLs, block internal IP spaces, and upgrade to IMDSv2."},
+  {title:"Broken Auth", what:"Flaws in session management, credential recovery, or token generation mechanisms.", risk:"Leads to widespread account takeover, credential stuffing, and session fixation.", fix:"Enforce strong password policies, implement rate limiting, and use secure, HttpOnly session cookies."},
+  {title:"Insecure Deserialization", what:"Extracting serialized data from untrusted sources without structural validation.", risk:"Attackers can manipulate object states, leading directly to Remote Code Execution (RCE).", fix:"Use safe data formats like JSON instead of native serialization, and implement digital signatures."},
+  {title:"Directory Traversal", what:"Manipulating file paths (e.g., '../') to access restricted directories and files.", risk:"Exposure of sensitive configuration files, shadow passwords, or application source code.", fix:"Normalize input paths, validate against an allowlist, and serve files from a restricted chroot jail."},
+  {title:"MitM Attack", what:"Man-in-the-Middle intercepts or alters communication between two endpoints.", risk:"Eavesdropping on sensitive data, credential harvesting, or injecting malicious payloads.", fix:"Enforce TLS 1.3 everywhere, implement HSTS headers, and use certificate pinning."},
+  {title:"Phishing", what:"Social engineering designed to deceive users into divulging credentials or executing malware.", risk:"Bypasses technical perimeters by exploiting human vulnerability, leading to network compromise.", fix:"Conduct security awareness training, implement email auth (DMARC/SPF), and use FIDO2 MFA."},
+  {title:"Zero-Day Exploit", what:"Attacking a software vulnerability before the vendor has released a patch.", risk:"Traditional signature-based defenses are blind, allowing unmitigated system compromise.", fix:"Deploy behavior-based EDR/XDR, implement strict network segmentation, and defense-in-depth."},
+  {title:"Ransomware", what:"Cryptoviral extortion that encrypts critical files and demands payment for the decryption key.", risk:"Catastrophic business disruption, permanent data loss, and double-extortion data leaks.", fix:"Maintain immutable, air-gapped backups, test restoration procedures, and block macro execution."},
+  {title:"DDoS Attack", what:"Distributed Denial of Service floods a target network or application with malicious traffic.", risk:"Exhausts system resources, rendering legitimate services unavailable to users.", fix:"Provision edge caching (CDNs), implement WAF rate limiting, and use upstream DDoS mitigation."},
+  {title:"API Key Exposure", what:"Publishing highly privileged API keys in frontend code (JS) or public repositories.", risk:"Enables unauthorized access to third-party services, data scraping, and billing exploitation.", fix:"Proxy API calls through a secure backend, restrict keys by IP/referrer, and utilize secret scanners."},
+  {title:"CORS Misconfig", what:"Cross-Origin Resource Sharing explicitly allowing arbitrary domains (Allow-Origin: *).", risk:"Malicious websites can make cross-domain requests to steal authenticated user data.", fix:"Specify precise, trusted domains in CORS headers and avoid reflecting the Origin header."},
+  {title:"Command Injection", what:"Injecting arbitrary OS commands into a vulnerable application input field.", risk:"Total host server compromise, data exfiltration, and lateral movement within the network.", fix:"Avoid invoking system shells, use language-specific native APIs, and strictly sanitize inputs."},
+  {title:"Buffer Overflow", what:"Overwriting memory bounds of a buffer, corrupting adjacent data or execution pointers.", risk:"Application crashes (DoS) or execution of arbitrary shellcode injected by the attacker.", fix:"Utilize memory-safe languages (Rust, Go), apply bounds checking, and enable ASLR/DEP."},
+  {title:"Weak Passwords", what:"Permitting the use of easily guessable, short, or globally breached passwords.", risk:"High susceptibility to brute-force, dictionary, and automated credential stuffing attacks.", fix:"Enforce minimum length requirements (14+ chars), check against breached lists, and mandate MFA."},
+  {title:"Shadow IT", what:"Employees deploying software, devices, or cloud services without IT department approval.", risk:"Unmanaged assets bypass security policies, leading to hidden data leaks and vulnerabilities.", fix:"Deploy CASB solutions, monitor network egress, and streamline approved IT requests."},
+  {title:"Clickjacking", what:"Rendering a transparent iframe over legitimate buttons to trick user interactions.", risk:"Users unwittingly perform critical actions (e.g., transferring funds) on an authenticated site.", fix:"Implement X-Frame-Options headers (DENY/SAMEORIGIN) or CSP frame-ancestors directives."},
+  {title:"Serverless Over-Privilege", what:"Lambda/Cloud Functions granted overly broad IAM permissions for their specific task.", risk:"If a function is exploited, the attacker inherits massive cloud environment access.", fix:"Apply micro-segmentation, create unique IAM roles per function, and strictly adhere to least privilege."},
+  {title:"Container Breakout", what:"Exploiting container runtime vulnerabilities to escape the isolated namespace to the host OS.", risk:"Complete compromise of the underlying Kubernetes node or Docker host.", fix:"Run containers as non-root, drop unnecessary Linux capabilities, and use runtime security profiles."},
+  {title:"Typosquatting", what:"Publishing malicious packages with names deceptively similar to popular legitimate libraries.", risk:"Developers accidentally install malware, leading to supply chain compromise.", fix:"Strictly verify package names, utilize internal artifact registries, and implement dependency lockfiles."},
+  {title:"IDOR", what:"Insecure Direct Object Reference occurs when an app exposes internal object IDs without validation.", risk:"Attackers can manipulate IDs (e.g., user_id=102) to view or modify other users' private data.", fix:"Implement strict authorization checks at the data access layer and use unpredictable UUIDs."},
+  {title:"Misconfigured WAF", what:"Web Application Firewalls deployed in 'log-only' mode or with overly permissive bypass rules.", risk:"Fails to block known attack signatures, leaving web vulnerabilities fully exposed.", fix:"Regularly tune rule sets, transition to blocking mode, and test efficacy via automated DAST."},
+  {title:"Unpatched OS", what:"Failing to apply security updates to operating systems and core infrastructure components.", risk:"Leaves infrastructure vulnerable to known exploits and automated worms (e.g., EternalBlue).", fix:"Establish a robust, automated patch management lifecycle and employ virtual patching via IPS."},
+  {title:"Data Exfiltration", what:"The unauthorized transfer of sensitive information out of a secure corporate network.", risk:"Loss of proprietary IP, regulatory fines (GDPR/HIPAA), and severe reputational damage.", fix:"Deploy Data Loss Prevention (DLP) agents, monitor DNS tunneling, and filter outbound network traffic."},
+  {title:"Subdomain Takeover", what:"A DNS record points to a de-provisioned third-party service (e.g., GitHub Pages, S3).", risk:"Attackers register the dangling resource, hosting malicious content under the trusted domain.", fix:"Regularly audit DNS zones, remove orphaned CNAME records, and integrate DNS checks."},
+  {title:"Secrets in Logs", what:"Applications inadvertently writing passwords, API keys, or session tokens to diagnostic log files.", risk:"Anyone with access to the logging aggregator (SIEM/CloudWatch) can harvest credentials.", fix:"Implement strict log sanitization, use masking libraries, and regularly audit logging configs."}
+];
+
+function nextCard(){
+  const t = topics[Math.floor(Math.random()*topics.length)];
+
+  document.getElementById("title").innerText = t.title;
+  document.getElementById("what").innerText = t.what;
+  document.getElementById("risk").innerText = t.risk;
+  document.getElementById("fix").innerText = t.fix;
+
+  document.getElementById("card").classList.remove("flip");
+}
+
+document.getElementById("card").onclick = () => {
+  document.getElementById("card").classList.toggle("flip");
+};
+
+// Initialize first card on load
+window.onload = nextCard;
+</script>
+
+</body>
+</html>

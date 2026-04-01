@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<title>XentinelAI — Red-Team Simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:      #020305;
+  --bg2:     #05060a;
+  --surface: #080b12;
+  --surface2:#0c1018;
+  --border:  rgba(255,255,255,0.06);
+  --border-bright: rgba(255,30,60,0.28);
+  --accent:  #ff1e3c;
+  --accent2: #ff6a00;
+  --accent3: #ffcc00;
+  --accent4: #4da6ff;
+  --green:   #00e87a;
+  --text:    #dde4f0;
+  --muted:   #8a909e;
+  --muted2:  #555f72;
+  --font-display:'Syne',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --font-ui:'Space Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);min-height:100vh;overflow-x:hidden;cursor:none}
+
+/* NOISE */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");pointer-events:none;z-index:9000;opacity:.5}
+
+/* SCANLINES */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:8999}
+
+/* CURSOR */
+.cursor{position:fixed;width:10px;height:10px;background:var(--accent);border-radius:50%;pointer-events:none;z-index:9999;mix-blend-mode:screen;transition:transform .08s ease;transform:translate(-50%,-50%)}
+.cursor-ring{position:fixed;width:34px;height:34px;border:1px solid rgba(255,30,60,0.5);border-radius:50%;pointer-events:none;z-index:9998;transition:width .2s,height .2s;transform:translate(-50%,-50%)}
+
+/* GRID */
+.grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(255,30,60,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,30,60,.03) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black,transparent)}
+
+/* ORBS */
+.orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0}
+.orb-1{width:700px;height:700px;background:radial-gradient(circle,rgba(255,30,60,.07),transparent 70%);top:-250px;right:-150px;animation:float1 9s ease-in-out infinite}
+.orb-2{width:500px;height:500px;background:radial-gradient(circle,rgba(255,106,0,.05),transparent 70%);bottom:-100px;left:-150px;animation:float2 11s ease-in-out infinite}
+.orb-3{width:350px;height:350px;background:radial-gradient(circle,rgba(77,166,255,.03),transparent 70%);top:50%;left:40%;animation:float3 13s ease-in-out infinite}
+@keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(-40px,50px)}}
+@keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-40px)}}
+@keyframes float3{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-45%,-55%)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes scanAnim{0%{transform:scaleX(0);transform-origin:left}50%{transform:scaleX(1);transform-origin:left}50.01%{transform-origin:right}100%{transform:scaleX(0);transform-origin:right}}
+@keyframes glitch{0%,100%{clip-path:inset(0 0 98% 0);transform:translateX(0)}20%{clip-path:inset(30% 0 50% 0);transform:translateX(-3px)}40%{clip-path:inset(60% 0 20% 0);transform:translateX(3px)}60%{clip-path:inset(80% 0 5% 0);transform:translateX(-2px)}80%{clip-path:inset(10% 0 80% 0);transform:translateX(2px)}}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(2,3,5,.98),transparent);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-wordmark{font-family:var(--font-display);font-weight:800;font-size:17px;color:var(--text);letter-spacing:-.02em}
+.nav-wordmark span{color:var(--accent)}
+.nav-badge{font-family:var(--font-mono);font-size:10px;color:var(--accent);border:1px solid var(--border-bright);padding:4px 10px;letter-spacing:.08em}
+.nav-right{display:flex;align-items:center;gap:20px}
+.nav-status{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 1.5s infinite}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:240px 1fr;padding-top:57px;min-height:100vh;position:relative;z-index:1}
+
+/* SIDEBAR */
+.sidebar{position:sticky;top:57px;height:calc(100vh - 57px);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;background:rgba(2,3,5,.7)}
+.sidebar-top{padding:24px 20px 14px}
+.sidebar-label{font-family:var(--font-mono);font-size:9px;color:var(--muted2);letter-spacing:.16em;text-transform:uppercase;margin-bottom:4px}
+.sidebar-title{font-size:18px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.sidebar-title span{color:var(--accent)}
+.sidebar-divider{height:1px;background:var(--border);margin:14px 0}
+.sidebar-section{padding:0 20px;font-family:var(--font-mono);font-size:9px;color:var(--muted2);letter-spacing:.14em;text-transform:uppercase;margin:14px 0 4px}
+.chain-tab{display:flex;flex-direction:column;gap:5px;padding:11px 20px;cursor:none;border-left:2px solid transparent;transition:all .2s;position:relative;overflow:hidden}
+.chain-tab:hover{background:rgba(255,255,255,.02)}
+.chain-tab.active{border-left-color:var(--accent);background:rgba(255,30,60,.04)}
+.chain-tab.s-fully_exploited{border-left-color:var(--accent)}
+.chain-tab.s-partially_exploited{border-left-color:var(--accent2)}
+.chain-tab.s-blocked{border-left-color:var(--green)}
+.chain-tab.active.s-blocked{background:rgba(0,232,122,.03)}
+.chain-tab.active.s-partially_exploited{background:rgba(255,106,0,.04)}
+.ct-title{font-family:var(--font-display);font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ct-meta{display:flex;justify-content:space-between;align-items:center}
+.risk-badge{font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;padding:2px 7px}
+.rb-critical{background:rgba(255,30,60,.18);color:var(--accent);border:1px solid rgba(255,30,60,.25)}
+.rb-high{background:rgba(255,106,0,.15);color:var(--accent2);border:1px solid rgba(255,106,0,.2)}
+.rb-medium{background:rgba(255,204,0,.1);color:var(--accent3);border:1px solid rgba(255,204,0,.18)}
+.ct-status{font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2)}
+.s-fully_exploited .ct-status{color:var(--accent)}
+.s-partially_exploited .ct-status{color:var(--accent2)}
+.s-blocked .ct-status{color:var(--green)}
+.sidebar-bottom{margin-top:auto;padding:14px 20px;border-top:1px solid var(--border)}
+.sb-btn{width:100%;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:9px 14px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:none;transition:all .2s;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.sb-btn:hover{border-color:var(--accent);color:var(--accent)}
+.sb-btn.danger{border-color:rgba(255,30,60,.3);color:var(--accent)}
+.sb-btn.danger:hover{background:rgba(255,30,60,.08)}
+
+/* MAIN PANEL */
+main{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+
+/* SUMMARY BAR */
+.summary-bar{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border);background:var(--bg2)}
+.sum-stat{padding:18px 24px;border-right:1px solid var(--border);position:relative;overflow:hidden}
+.sum-stat:last-child{border-right:none}
+.sum-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.ss-total::before{background:var(--muted2)}
+.ss-exploited::before{background:var(--accent)}
+.ss-partial::before{background:var(--accent2)}
+.ss-blocked::before{background:var(--green)}
+.sum-num{font-size:34px;font-weight:800;line-height:1;letter-spacing:-.04em;margin-bottom:4px}
+.ss-total .sum-num{color:var(--text)}
+.ss-exploited .sum-num{color:var(--accent)}
+.ss-partial .sum-num{color:var(--accent2)}
+.ss-blocked .sum-num{color:var(--green)}
+.sum-lbl{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+
+/* TERMINAL TITLEBAR */
+.term-titlebar{padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.tb-dots{display:flex;gap:6px}
+.tb-dot{width:11px;height:11px;border-radius:50%}
+.tb-dot-r{background:#ff453a}.tb-dot-y{background:#ffd60a}.tb-dot-g{background:#30d158}
+.tb-title{font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.06em;margin-left:8px}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.term-speed{font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:.06em}
+.speed-btn{font-family:var(--font-mono);font-size:9px;padding:3px 8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:none;letter-spacing:.08em;transition:all .15s}
+.speed-btn:hover,.speed-btn.active{border-color:var(--accent);color:var(--accent)}
+
+/* TERMINAL BODY */
+.term-body{flex:1;overflow-y:auto;padding:22px 28px;background:var(--bg);font-family:var(--font-mono);font-size:12.5px;line-height:1.7;scroll-behavior:smooth}
+
+/* TERMINAL LINES */
+.tl{display:flex;gap:10px;opacity:0;animation:fadeIn .08s forwards}
+.tl.blank{height:9px}
+.tl-pre{color:var(--muted2);flex-shrink:0;min-width:30px;user-select:none}
+.tl-txt{flex:1;word-break:break-all}
+.tl.info    .tl-pre{color:var(--accent4)}  .tl.info    .tl-txt{color:var(--text)}
+.tl.hit     .tl-pre{color:var(--green)}    .tl.hit     .tl-txt{color:var(--green)}
+.tl.warn    .tl-pre{color:var(--accent2)}  .tl.warn    .tl-txt{color:var(--accent2)}
+.tl.crit    .tl-pre{color:var(--accent)}   .tl.crit    .tl-txt{color:var(--accent);font-weight:700}
+.tl.dim     .tl-pre{color:var(--muted2)}   .tl.dim     .tl-txt{color:var(--muted2)}
+.tl.sep     .tl-txt{color:var(--border);letter-spacing:1px}
+.tl.cmd     .tl-pre{color:var(--accent)}   .tl.cmd     .tl-txt{color:var(--text)}
+.tl.blocked .tl-pre{color:var(--green)}    .tl.blocked .tl-txt{color:var(--green)}
+.tl.narrative-warn .tl-txt{color:var(--accent3)}
+
+/* inline highlight helpers */
+.hl-file{color:var(--accent4);text-decoration:underline;text-underline-offset:2px}
+.hl-secret{color:var(--accent);font-weight:700}
+.hl-context{color:var(--muted)}
+.hl-label{color:var(--accent2)}
+.hl-green{color:var(--green)}
+.hl-class{color:var(--accent3);font-weight:700}
+
+/* cursor blink */
+.cursor-blink{display:inline-block;width:7px;height:13px;background:var(--accent);vertical-align:middle;margin-left:2px;animation:blink 1s step-end infinite}
+
+/* CHAIN VERDICT BOX */
+.verdict-box{margin:14px 0;padding:18px 22px;border:1px solid var(--border);background:var(--surface);animation:fadeIn .3s forwards;opacity:0}
+.verdict-box.vb-exploited{border-color:var(--accent);background:rgba(255,30,60,.06)}
+.verdict-box.vb-partial{border-color:var(--accent2);background:rgba(255,106,0,.05)}
+.verdict-box.vb-blocked{border-color:var(--green);background:rgba(0,232,122,.04)}
+.vb-title{font-size:15px;font-weight:800;letter-spacing:-.01em;margin-bottom:5px}
+.vb-exploited .vb-title{color:var(--accent)}
+.vb-partial   .vb-title{color:var(--accent2)}
+.vb-blocked   .vb-title{color:var(--green)}
+.vb-blast{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6}
+.vb-narrative{font-family:var(--font-mono);font-size:10px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);color:var(--accent3);margin-bottom:10px}
+.vb-narrative::before{content:'⚠ NARRATIVE: ';color:var(--muted2)}
+.vb-fix{font-family:var(--font-mono);font-size:11px;color:var(--green);border-top:1px solid var(--border);padding-top:10px;margin-top:10px;line-height:1.6}
+.vb-fix::before{content:'⚑ FIX: ';color:var(--muted2)}
+.vb-path{font-family:var(--font-mono);font-size:10px;color:var(--accent3);margin-bottom:4px}
+.vb-path::before{content:'EXPLOIT PATH: ';color:var(--muted2)}
+
+/* CONTROLS */
+.controls{padding:12px 28px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+.ctrl-btn{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:8px 16px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:none;transition:all .15s}
+.ctrl-btn:hover{border-color:var(--text);color:var(--text)}
+.ctrl-btn.red{border-color:rgba(255,30,60,.35);color:var(--accent)}
+.ctrl-btn.red:hover{background:rgba(255,30,60,.08)}
+
+/* LOADING */
+#loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:9990;transition:opacity .5s}
+.loader-logo{font-family:var(--font-display);font-weight:800;font-size:36px;letter-spacing:-.03em;color:var(--accent);position:relative}
+.loader-logo::after{content:'AI';color:var(--text);font-size:28px;margin-left:2px}
+.loader-sub{font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
+.loader-bar{width:280px;height:1px;background:var(--border);overflow:hidden}
+.loader-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width .6s ease}
+.loader-steps{font-family:var(--font-mono);font-size:10px;color:var(--muted2);text-align:center;letter-spacing:.08em}
+
+/* EMPTY */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted2);gap:10px;padding:60px}
+.empty-icon{font-size:36px;opacity:.1}
+.empty-p{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+
+/* scrollbar */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--muted2)}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--surface);border:1px solid var(--border);padding:12px 18px;font-family:var(--font-mono);font-size:11px;color:var(--text);display:flex;align-items:center;gap:10px;transform:translateY(50px);opacity:0;transition:all .3s ease;max-width:380px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast::before{content:'';width:2px;align-self:stretch;flex-shrink:0}
+.toast.success::before{background:var(--green)}.toast.error::before{background:var(--accent)}.toast.info::before{background:var(--accent4)}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="loader-logo">Xentinel</div>
+  <div class="loader-sub">Initializing Red-Team Simulation Engine</div>
+  <div class="loader-bar"><div class="loader-fill" id="loaderFill"></div></div>
+  <div class="loader-steps" id="loaderStep">Loading attack chains...</div>
+</div>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="grid-bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<nav>
+  <div class="nav-logo">
+    <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+      <path d="M14 2L3 7.5V16C3 21 7.8 25.5 14 27C20.2 25.5 25 21 25 16V7.5L14 2Z" stroke="#ff1e3c" stroke-width="1.5" fill="none"/>
+      <path d="M9 14l3.5 3.5L19 11" stroke="#ff1e3c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="nav-wordmark">Xentinel<span>AI</span></div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-badge">RED-TEAM SIMULATION</div>
+    <div class="nav-status">
+      <div class="status-dot"></div>
+      <span id="navStatus">ACTIVE</span>
+    </div>
+  </div>
+</nav>
+
+<div class="layout" id="appLayout" style="display:none">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-label">Simulation</div>
+      <div class="sidebar-title">Attack<br><span>Chains</span></div>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Select Chain</div>
+    <div id="chainList"></div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Repo</div>
+    <div style="padding:0 20px 14px;font-family:var(--font-mono);font-size:10px;color:var(--muted2)" id="repoLabel">—</div>
+    <div class="sidebar-bottom">
+      <button class="sb-btn danger" onclick="replayChain()">↺ Replay Current</button>
+      <button class="sb-btn" onclick="exportReport()">↓ Export JSON</button>
+      <button class="sb-btn" onclick="window.close()">← Back to Dashboard</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+    <!-- Summary bar -->
+    <div class="summary-bar">
+      <div class="sum-stat ss-total"><div class="sum-num" id="sTotal">0</div><div class="sum-lbl">Chains</div></div>
+      <div class="sum-stat ss-exploited"><div class="sum-num" id="sExploited">0</div><div class="sum-lbl">Fully Exploited</div></div>
+      <div class="sum-stat ss-partial"><div class="sum-num" id="sPartial">0</div><div class="sum-lbl">Partially Exploited</div></div>
+      <div class="sum-stat ss-blocked"><div class="sum-num" id="sBlocked">0</div><div class="sum-lbl">Blocked</div></div>
+    </div>
+
+    <!-- Terminal titlebar -->
+    <div class="term-titlebar">
+      <div class="tb-dots">
+        <div class="tb-dot tb-dot-r"></div>
+        <div class="tb-dot tb-dot-y"></div>
+        <div class="tb-dot tb-dot-g"></div>
+      </div>
+      <div class="tb-title" id="termTitle">xentinel-redteam — select a chain</div>
+      <div class="tb-right">
+        <span class="term-speed">Speed:</span>
+        <button class="speed-btn" onclick="setSpeed(30)" id="sp-fast">Fast</button>
+        <button class="speed-btn active" onclick="setSpeed(16)" id="sp-normal">Normal</button>
+        <button class="speed-btn" onclick="setSpeed(6)" id="sp-slow">Slow</button>
+      </div>
+    </div>
+
+    <!-- Terminal body -->
+    <div class="term-body" id="termBody">
+      <div class="empty">
+        <div class="empty-icon">⬡</div>
+        <div class="empty-p">Select a chain to begin simulation</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="ctrl-btn red" onclick="replayChain()">↺ Replay</button>
+      <button class="ctrl-btn" onclick="skipToEnd()">⏭ Skip Animation</button>
+      <button class="ctrl-btn" onclick="exportReport()">↓ Export JSON</button>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let report        = null;
+let activeIdx     = -1;
+let charDelay     = 16;
+let animCtrl      = null;
+let pendingLines  = [];
+let skipFlag      = false;
+
+// ─── Cursor ──────────────────────────────────────────────────────────────────
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cur.style.left = mx+'px'; cur.style.top = my+'px';
+});
+(function tick(){
+  rx += (mx-rx)*.1; ry += (my-ry)*.1;
+  ring.style.left = rx+'px'; ring.style.top = ry+'px';
+  requestAnimationFrame(tick);
+})();
+document.querySelectorAll('button,.chain-tab').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{ring.style.width='48px';ring.style.height='48px'});
+  el.addEventListener('mouseleave',()=>{ring.style.width='34px';ring.style.height='34px'});
+});
+
+// ─── Speed ───────────────────────────────────────────────────────────────────
+function setSpeed(ms) {
+  charDelay = ms;
+  document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+  const map = {30:'sp-fast',16:'sp-normal',6:'sp-slow'};
+  document.getElementById(map[ms])?.classList.add('active');
+}
+
+// ─── Boot ────────────────────────────────────────────────────────────────────
+async function boot() {
+  animLoader();
+
+  // Always fetch fresh — never use cached simulation result
+  const scanRaw = sessionStorage.getItem('xentinel_scan');
+  if (scanRaw) {
+    setLoaderStep('Calling /simulate endpoint...');
+    try {
+      const res = await fetch('/simulate', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ scan_result: JSON.parse(scanRaw) })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      report = await res.json();
+      await delay(400);
+      hideLoader();
+      renderApp();
+      return;
+    } catch(e) {
+      console.error('Simulation fetch error:', e);
+    }
+  }
+
+  // Demo fallback
+  setLoaderStep('Loading demo data...');
+  report = getDemoReport();
+  await delay(1200);
+  hideLoader();
+  renderApp();
+}
+
+function animLoader() {
+  const fill = document.getElementById('loaderFill');
+  const steps = [
+    'Parsing attack chains...',
+    'Loading pattern library...',
+    'Initialising NLP mapper...',
+    'Building narrative validator...',
+    'Ready.',
+  ];
+  let pct = 0, si = 0;
+  const iv = setInterval(() => {
+    pct = Math.min(pct + Math.random()*22, 92);
+    fill.style.width = pct + '%';
+    if (si < steps.length) setLoaderStep(steps[si++]);
+    if (pct >= 92) clearInterval(iv);
+  }, 300);
+  setTimeout(() => { fill.style.width = '100%'; }, 1800);
+}
+
+function setLoaderStep(t) { document.getElementById('loaderStep').textContent = t; }
+
+function hideLoader() {
+  const el = document.getElementById('loader');
+  el.style.opacity = '0';
+  setTimeout(() => el.remove(), 500);
+}
+
+// ─── Render app ──────────────────────────────────────────────────────────────
+function renderApp() {
+  document.getElementById('appLayout').style.display = 'grid';
+
+  document.getElementById('sTotal').textContent     = report.chains_simulated;
+  document.getElementById('sExploited').textContent = report.chains_fully_exploited;
+  document.getElementById('sPartial').textContent   = report.chains_partially_exploited;
+  document.getElementById('sBlocked').textContent   = report.chains_blocked;
+  document.getElementById('repoLabel').textContent  = report.repo;
+  document.getElementById('navStatus').textContent  = report.chains_fully_exploited > 0 ? 'COMPROMISED' : 'SECURED';
+
+  buildSidebar();
+  if (report.simulations.length > 0) selectChain(0);
+}
+
+function buildSidebar() {
+  const list = document.getElementById('chainList');
+  list.innerHTML = '';
+  report.simulations.forEach((sim, i) => {
+    const risk = sim.risk_score;
+    const rc = risk >= 90 ? 'rb-critical' : risk >= 70 ? 'rb-high' : 'rb-medium';
+    const sl = { fully_exploited:'EXPLOITED', partially_exploited:'PARTIAL', blocked:'BLOCKED' }[sim.overall_status] || '—';
+    const tab = document.createElement('div');
+    tab.className = `chain-tab s-${sim.overall_status}`;
+    tab.id = `tab-${i}`;
+    tab.innerHTML = `
+      <div class="ct-title">${esc(sim.chain_title)}</div>
+      <div class="ct-meta">
+        <span class="risk-badge ${rc}">RISK ${risk}</span>
+        <span class="ct-status">${sl}</span>
+      </div>`;
+    tab.onclick = () => selectChain(i);
+    list.appendChild(tab);
+  });
+}
+
+function selectChain(i) {
+  activeIdx = i;
+  document.querySelectorAll('.chain-tab').forEach((t, idx) => t.classList.toggle('active', idx === i));
+  const sim = report.simulations[i];
+  document.getElementById('termTitle').textContent = `xentinel-redteam — ${sim.chain_title.toLowerCase().replace(/\s+/g,'-')}`;
+  stopAnim();
+  playChain(sim);
+}
+
+function replayChain() { if (activeIdx >= 0) selectChain(activeIdx); }
+
+function skipToEnd() {
+  skipFlag = true;
+}
+
+// ─── Animation engine ─────────────────────────────────────────────────────────
+function stopAnim() {
+  skipFlag = false;
+  if (animCtrl) animCtrl.cancelled = true;
+  animCtrl = null;
+}
+
+function playChain(sim) {
+  const body = document.getElementById('termBody');
+  body.innerHTML = '';
+  skipFlag = false;
+
+  const ctrl = { cancelled: false };
+  animCtrl = ctrl;
+
+  const script = buildScript(sim);
+  let i = 0;
+
+  async function next() {
+    if (ctrl.cancelled) return;
+
+    // Skip mode: dump all remaining lines instantly
+    if (skipFlag) {
+      for (let j = i; j < script.length; j++) {
+        if (ctrl.cancelled) return;
+        const spec = script[j];
+        if (spec.type === 'verdict') { appendVerdict(body, spec.sim); continue; }
+        appendLineInstant(body, spec);
+      }
+      appendCursor(body);
+      body.scrollTop = body.scrollHeight;
+      return;
+    }
+
+    if (i >= script.length) { appendCursor(body); return; }
+
+    const spec = script[i++];
+    if (spec.type === 'verdict') {
+      appendVerdict(body, spec.sim);
+      body.scrollTop = body.scrollHeight;
+      await delay(spec.pause || 200);
+    } else {
+      await renderLine(body, spec, ctrl);
+      if (ctrl.cancelled) return;
+      await delay(spec.pause || 50);
+    }
+    next();
+  }
+
+  next();
+}
+
+// ─── Script builder ───────────────────────────────────────────────────────────
+function buildScript(sim) {
+  const lines = [];
+  const p = (type, pre, txt, pause=50) => lines.push({type,pre,txt,pause});
+
+  p('dim',  '//', '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 20);
+  p('info', '[XENTINEL]', `RED-TEAM SIMULATION  ·  XentinelAI`, 30);
+  p('info', '[TARGET]',   `${esc(sim.chain_title)}`, 30);
+  p('info', '[RISK]',     `${sim.risk_score}/100  ·  ${sim.steps_total} steps  ·  Narrative: ${sim.narrative_intact ? '✓ INTACT' : '⚠ BROKEN'}`, 30);
+  p('info', '[PATH]',     `<span class="hl-class">${esc(sim.narrative_summary)}</span>`, 30);
+  p('dim',  '//', '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 700);
+
+  sim.step_results.forEach((step, si) => {
+    p('blank','','',5);
+
+    // Step header with timestamp
+    const ts = step.timestamp_offset || `T+00:0${si}`;
+    p('cmd', `[${ts}]`, `<span class="hl-class">STEP ${step.step_index}/${sim.steps_total}</span>  —  ${esc(step.step_description)}`, 80);
+    p('dim', '  ├─', `Finding: <span class="hl-label">${esc(step.mapped_finding_title)}</span>  <span class="hl-context">${esc(shortPath(step.mapped_finding_file))}${step.mapped_finding_line ? ':'+step.mapped_finding_line : ''}</span>`, 40);
+    p('dim', '  └─', esc(step.action_taken), 60);
+    p('blank','','',5);
+
+    // Attacker perspective
+    if (step.attacker_perspective) {
+      p('info', '  [ATTACKER]', esc(step.attacker_perspective), 60);
+    }
+
+    // Payload example
+    if (step.payload_example) {
+      p('dim', '  [VECTOR]', esc(step.payload_example), 50);
+    }
+    p('blank','','',5);
+
+    // Evidence
+    if (step.evidence && step.evidence.length > 0) {
+      step.evidence.forEach(ev => {
+        p('info', '  [SCAN]',  `<span class="hl-file">${esc(shortPath(ev.file))}:${ev.line_number || '?'}</span>`, 30);
+        p('hit',  '  [FOUND]', `<span class="hl-label">${esc(ev.pattern_type)}</span>  —  <span class="hl-context">${esc(ev.matched_context)}</span>`, 70);
+      });
+      p('blank','','',5);
+    }
+
+    // Impact
+    if (step.impact_class) {
+      p('dim', '  [IMPACT]', `<span class="hl-class">${esc(step.impact_class)}</span>  —  ${esc(step.impact)}`, 40);
+    }
+
+    // Consequence (what attacker now has)
+    if (step.consequence && step.status === 'compromised') {
+      p('hit', '  [RESULT]', esc(step.consequence), 50);
+    }
+
+    // Narrative note
+    if (step.narrative_note) {
+      p('narrative-warn', '  [NAR]', esc(step.narrative_note), 40);
+    }
+
+    p('blank','','',5);
+
+    // Step verdict
+    if (step.status === 'compromised') {
+      p('crit',    '  [!!]', `▶ STEP ${step.step_index} COMPROMISED`, 450);
+    } else if (step.status === 'partial') {
+      p('warn',    '  [!]',  `▶ STEP ${step.step_index} PARTIAL — vulnerability present, impact limited`, 350);
+    } else {
+      p('blocked', '  [✓]',  `▶ STEP ${step.step_index} BLOCKED — no matching vulnerability`, 350);
+    }
+    p('blank','','',10);
+  });
+
+  p('dim', '//', '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 50);
+  p('blank','','',20);
+  lines.push({ type:'verdict', sim, pause: 200 });
+
+  return lines;
+}
+
+// ─── DOM helpers ──────────────────────────────────────────────────────────────
+async function renderLine(container, spec, ctrl) {
+  if (spec.type === 'blank') {
+    const el = document.createElement('div');
+    el.className = 'tl blank';
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+    return;
+  }
+  const el  = document.createElement('div');
+  el.className = `tl ${spec.type}`;
+  const pre = document.createElement('span'); pre.className='tl-pre'; pre.textContent=spec.pre;
+  const txt = document.createElement('span'); txt.className='tl-txt';
+  el.appendChild(pre); el.appendChild(txt);
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+  await typewriterHTML(txt, spec.txt, ctrl);
+}
+
+function appendLineInstant(container, spec) {
+  if (spec.type === 'blank') {
+    const el = document.createElement('div'); el.className='tl blank'; container.appendChild(el); return;
+  }
+  const el  = document.createElement('div'); el.className=`tl ${spec.type}`;
+  const pre = document.createElement('span'); pre.className='tl-pre'; pre.textContent=spec.pre;
+  const txt = document.createElement('span'); txt.className='tl-txt'; txt.innerHTML=spec.txt;
+  el.appendChild(pre); el.appendChild(txt);
+  container.appendChild(el);
+}
+
+async function typewriterHTML(el, html, ctrl) {
+  const plain = html.replace(/<[^>]+>/g, '');
+  let typed = '';
+  for (let i = 0; i < plain.length; i++) {
+    if (ctrl.cancelled || skipFlag) { el.innerHTML = html; return; }
+    typed += plain[i];
+    el.textContent = typed;
+    if (i % 3 === 0) await delay(charDelay);
+  }
+  el.innerHTML = html;
+}
+
+function appendVerdict(container, sim) {
+  const vbClass = {
+    fully_exploited:    'vb-exploited',
+    partially_exploited:'vb-partial',
+    blocked:            'vb-blocked',
+  }[sim.overall_status] || 'vb-blocked';
+
+  const titles = {
+    fully_exploited:    '⚠ CHAIN FULLY EXPLOITED',
+    partially_exploited:'⚡ CHAIN PARTIALLY EXPLOITED',
+    blocked:            '✓ ATTACK CHAIN BLOCKED',
+  };
+
+  const narrativeHtml = !sim.narrative_intact
+    ? `<div class="vb-narrative">${esc(sim.step_results.find(s=>s.narrative_note)?.narrative_note || 'Narrative gap detected.')}</div>`
+    : '';
+
+  const box = document.createElement('div');
+  box.className = `verdict-box ${vbClass}`;
+  box.innerHTML = `
+    <div class="vb-title">${titles[sim.overall_status] || '—'}</div>
+    <div class="vb-blast">${esc(sim.blast_radius)}</div>
+    ${narrativeHtml}
+    <div class="vb-path">${esc(sim.narrative_summary)}</div>
+    <div class="vb-fix">${esc(sim.remediation)}</div>
+  `;
+  container.appendChild(box);
+}
+
+function appendCursor(container) {
+  const el = document.createElement('div');
+  el.className = 'tl cmd';
+  el.innerHTML = `<span class="tl-pre">$</span><span class="tl-txt"><span class="cursor-blink"></span></span>`;
+  container.appendChild(el);
+}
+
+// ─── Utility ──────────────────────────────────────────────────────────────────
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function shortPath(p) {
+  if (!p) return '—';
+  const parts = p.replace(/\\/g,'/').split('/');
+  return parts.length > 3 ? '…/' + parts.slice(-3).join('/') : p;
+}
+
+function exportReport() {
+  if (!report) return;
+  const blob = new Blob([JSON.stringify(report, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `xentinel-sim-${report.report_id.slice(0,8)}.json`;
+  a.click();
+  toast('Report exported', 'success');
+}
+
+let _toastTimer;
+function toast(msg, type='info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `toast ${type} show`;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ─── Demo report ──────────────────────────────────────────────────────────────
+function getDemoReport() {
+  return {
+    report_id: "demo-00000000",
+    generated_at: new Date().toISOString(),
+    repo: "xentinel-demo-repo",
+    chains_simulated: 3,
+    chains_fully_exploited: 2,
+    chains_partially_exploited: 1,
+    chains_blocked: 0,
+    simulations: [
+      {
+        chain_id: "9798527e",
+        chain_title: "Cloud Infrastructure Takeover",
+        risk_score: 98,
+        overall_status: "fully_exploited",
+        narrative_intact: true,
+        steps_total: 2,
+        steps_compromised: 2,
+        narrative_summary: "CRED → CLOUD",
+        blast_radius: "Full AWS account compromise — attacker has administrative control over all cloud resources, data, and compute.",
+        remediation: "Remove hardcoded AWS credentials from src/app.py and store them in AWS Secrets Manager or environment variables.",
+        step_results: [
+          {
+            step_index: 1,
+            step_description: "Step 1: attacker reads hardcoded AWS access key and secret in xentinel-demo-repo/src/app.py using finding da41b4fc and 6d74c14a",
+            mapped_finding_id: "da41b4fc",
+            mapped_finding_title: "Xentinel Hardcoded Aws Access Key",
+            mapping_confidence: "high",
+            status: "compromised",
+            action_taken: "Line-level credential scan on app.py (±12 lines around finding anchor)",
+            impact_class: "CRED",
+            impact: "AWS Access Key ID extracted — attacker has cloud API identity, can enumerate all services",
+            narrative_valid: true,
+            narrative_note: "",
+            evidence: [
+              { file: "xentinel-demo-repo/src/app.py", line_number: 10, pattern_type: "AWS Access Key ID",       matched_context: "AWS_ACCESS_KEY_ID = \"AKIA****XAMPLE\"", redacted_value: "AKIA****" },
+              { file: "xentinel-demo-repo/src/app.py", line_number: 11, pattern_type: "AWS Secret Access Key",   matched_context: "AWS_SECRET_ACCESS_KEY = \"wJal****rkey\"", redacted_value: "wJal****" },
+              { file: "xentinel-demo-repo/src/app.py", line_number: 12, pattern_type: "Hardcoded Password",      matched_context: "DB_PASSWORD = \"supe****ord\"",            redacted_value: "supe****" },
+              { file: "xentinel-demo-repo/src/app.py", line_number: 13, pattern_type: "Stripe Live Secret Key",  matched_context: "STRIPE_SECRET = \"sk_li****test\"",         redacted_value: "sk_li****" }
+            ]
+          },
+          {
+            step_index: 2,
+            step_description: "Step 2: this gives them access to the cloud infrastructure — use finding 67f81e97 to access the publicly accessible RDS instance",
+            mapped_finding_id: "67f81e97",
+            mapped_finding_title: "RDS instance publicly accessible",
+            mapping_confidence: "high",
+            status: "compromised",
+            action_taken: "Infrastructure misconfiguration analysis on main.tf",
+            impact_class: "CLOUD",
+            impact: "RDS instance is publicly accessible — direct database connection from internet possible",
+            narrative_valid: true,
+            narrative_note: "",
+            evidence: [
+              { file: "xentinel-demo-repo/infra/main.tf", line_number: 53, pattern_type: "RDS publicly accessible",  matched_context: "  publicly_accessible = true", redacted_value: "true" },
+              { file: "xentinel-demo-repo/infra/main.tf", line_number: 14, pattern_type: "S3 bucket public ACL",      matched_context: "  acl = \"publ****ead\"",          redacted_value: "publ****" }
+            ]
+          }
+        ]
+      },
+      {
+        chain_id: "d71f891c",
+        chain_title: "Privilege Escalation & Data Exfiltration",
+        risk_score: 92,
+        overall_status: "fully_exploited",
+        narrative_intact: true,
+        steps_total: 2,
+        steps_compromised: 2,
+        narrative_summary: "DB → DATA",
+        blast_radius: "Database fully compromised — credentials plus SQL injection give complete read/write access to all tables.",
+        remediation: "Fix SQL injection in src/app.py using parameterised queries; set S3 ACL to private in main.tf.",
+        step_results: [
+          {
+            step_index: 1,
+            step_description: "Step 1: attacker exploits SQL injection vulnerability in xentinel-demo-repo/src/app.py using finding 521062af",
+            mapped_finding_id: "521062af",
+            mapped_finding_title: "Tainted Sql String",
+            mapping_confidence: "high",
+            status: "compromised",
+            action_taken: "SQL injection pattern analysis on app.py",
+            impact_class: "DB",
+            impact: "SQL injection vector confirmed — attacker can dump tables, extract credentials, or drop data",
+            narrative_valid: true,
+            narrative_note: "",
+            evidence: [
+              { file: "xentinel-demo-repo/src/app.py", line_number: 20, pattern_type: "SQL %-format injection",     matched_context: "query = 'SELECT * FROM users WHERE id = %s' % user_id", redacted_value: "%s' %%" },
+              { file: "xentinel-demo-repo/src/app.py", line_number: 18, pattern_type: "SQL string concat injection", matched_context: "result = conn.execute('SELECT * FROM users WHERE id = ' + user_id)", redacted_value: "' +" }
+            ]
+          },
+          {
+            step_index: 2,
+            step_description: "Step 2: this gives them elevated privileges — access S3 bucket with public ACL using finding ea909ac3",
+            mapped_finding_id: "ea909ac3",
+            mapped_finding_title: "S3 bucket allows public ACL",
+            mapping_confidence: "medium",
+            status: "compromised",
+            action_taken: "Path traversal and data exposure scan on main.tf",
+            impact_class: "DATA",
+            impact: "S3 bucket is publicly readable — all stored objects accessible without authentication",
+            narrative_valid: true,
+            narrative_note: "",
+            evidence: [
+              { file: "xentinel-demo-repo/infra/main.tf", line_number: 14, pattern_type: "S3 bucket public ACL", matched_context: "  acl = \"publ****ead\"", redacted_value: "publ****" }
+            ]
+          }
+        ]
+      },
+      {
+        chain_id: "ab23eb97",
+        chain_title: "Code Execution & SSH Pivot",
+        risk_score: 88,
+        overall_status: "partially_exploited",
+        narrative_intact: false,
+        steps_total: 2,
+        steps_compromised: 1,
+        narrative_summary: "RCE → (blocked)",
+        blast_radius: "Partial compromise — RCE primitive confirmed but pivot step could not be fully validated in source.",
+        remediation: "Fix subprocess injection in app.py by removing shell=True; restrict SSH security group to trusted CIDRs.",
+        step_results: [
+          {
+            step_index: 1,
+            step_description: "Step 1: attacker exploits subprocess injection vulnerability in xentinel-demo-repo/src/app.py using finding 565eee96",
+            mapped_finding_id: "565eee96",
+            mapped_finding_title: "Subprocess Injection",
+            mapping_confidence: "high",
+            status: "compromised",
+            action_taken: "Code execution primitive detection on app.py",
+            impact_class: "RCE",
+            impact: "Code execution confirmed — attacker can run OS commands, install backdoors, pivot internally",
+            narrative_valid: true,
+            narrative_note: "",
+            evidence: [
+              { file: "xentinel-demo-repo/src/app.py", line_number: 28, pattern_type: "subprocess shell=True", matched_context: "output = subprocess.check_output(f\"ping -c 1 {host}\", shell=True)", redacted_value: "shell=True" }
+            ]
+          },
+          {
+            step_index: 2,
+            step_description: "Step 2: pivot using unrestricted SSH (port 22) security group — finding 17c59383",
+            mapped_finding_id: "17c59383",
+            mapped_finding_title: "Security group allows unrestricted SSH (port 22)",
+            mapping_confidence: "medium",
+            status: "partial",
+            action_taken: "Network exposure rule analysis on main.tf",
+            impact_class: "NET",
+            impact: "File located but SSH CIDR block pattern not matched at anchor line — check ingress rules manually.",
+            narrative_valid: false,
+            narrative_note: "Narrative gap: RCE → NET is an unusual pivot (expected one of: CRED, DATA, CLOUD, PRIVESC).",
+            evidence: []
+          }
+        ]
+      }
+    ]
+  };
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+boot();
+</script>
+</body>
+</html>

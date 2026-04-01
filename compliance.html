@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<title>XentinelAI — Compliance & Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#050608;--bg2:#080b10;--surface:#0d1117;--surface2:#111820;
+  --border:rgba(255,255,255,0.07);--border-bright:rgba(99,255,180,0.25);
+  --accent:#63ffb4;--accent2:#ff4d6d;--accent3:#ffd166;--accent4:#4da6ff;
+  --text:#e8edf5;--muted:#a9acb0;--muted2:#555f72;
+  --font-display:'Syne',sans-serif;--font-mono:'JetBrains Mono',monospace;--font-ui:'Space Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);min-height:100vh;overflow-x:hidden;cursor:none}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9000;opacity:.4}
+.grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(99,255,180,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(99,255,180,.03) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black,transparent)}
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+.orb-1{width:500px;height:500px;background:radial-gradient(circle,rgba(99,255,180,.05),transparent 70%);top:-150px;right:-100px;animation:float1 9s ease-in-out infinite}
+.orb-2{width:400px;height:400px;background:radial-gradient(circle,rgba(255,77,109,.04),transparent 70%);bottom:0;left:-100px;animation:float2 11s ease-in-out infinite}
+@keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,40px)}}
+@keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-30px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.cursor{position:fixed;width:10px;height:10px;background:var(--accent);border-radius:50%;pointer-events:none;z-index:9999;mix-blend-mode:screen;transform:translate(-50%,-50%)}
+.cursor-ring{position:fixed;width:34px;height:34px;border:1px solid rgba(99,255,180,.4);border-radius:50%;pointer-events:none;z-index:9998;transition:width .2s,height .2s;transform:translate(-50%,-50%)}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:500;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(5,6,8,.97),transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-wordmark{font-family:var(--font-display);font-weight:800;font-size:17px;letter-spacing:-.02em}
+.nav-wordmark span{color:var(--accent)}
+.nav-badge{font-family:var(--font-mono);font-size:10px;color:var(--accent);border:1px solid var(--border-bright);padding:4px 10px;letter-spacing:.08em}
+.btn-back{font-family:var(--font-mono);font-size:11px;color:var(--muted);background:transparent;border:1px solid var(--border);padding:8px 16px;cursor:none;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn-back:hover{border-color:var(--accent);color:var(--accent)}
+
+.layout{padding-top:57px;min-height:100vh;position:relative;z-index:1}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:57px;z-index:100}
+.tab{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:14px 28px;color:var(--muted);cursor:none;border-bottom:2px solid transparent;transition:all .2s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(99,255,180,.03)}
+.panel{display:none;animation:fadeIn .3s ease}.panel.active{display:block}
+
+.sec-header{padding:36px 48px 20px;border-bottom:1px solid var(--border)}
+.sec-label{font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.sec-label::after{content:'';flex:1;max-width:50px;height:1px;background:var(--border-bright)}
+.sec-title{font-size:clamp(24px,3vw,38px);font-weight:800;letter-spacing:-.03em;line-height:1.05}
+.sec-title .outline{color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.6)}
+.sec-sub{font-family:var(--font-mono);font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6}
+
+.scan-selector{padding:20px 48px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.scan-select{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:9px 14px;outline:none;cursor:pointer;transition:border-color .2s;min-width:320px}
+.scan-select:focus{border-color:var(--accent)}
+.btn-primary{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:9px 20px;background:var(--accent);color:var(--bg);border:none;cursor:none;transition:all .2s;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);font-weight:700}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,255,180,.2)}
+.btn-primary:disabled{background:var(--muted2);clip-path:none;cursor:not-allowed}
+
+/* ── COMPLIANCE ── */
+.compliance-outer{padding:24px 48px}
+
+.compliance-overview{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);margin-bottom:24px;animation:fadeUp .4s ease}
+.co-card{background:var(--surface);padding:20px 22px;position:relative;overflow:hidden}
+.co-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.co-owasp::before{background:var(--accent2)}
+.co-pci::before{background:var(--accent3)}
+.co-soc2::before{background:var(--accent4)}
+.co-cwe::before{background:var(--accent)}
+.co-label{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+.co-main{font-size:28px;font-weight:800;letter-spacing:-.03em;line-height:1;margin-bottom:4px}
+.co-owasp .co-main{color:var(--accent2)}
+.co-pci   .co-main{color:var(--accent3)}
+.co-soc2  .co-main{color:var(--accent4)}
+.co-cwe   .co-main{color:var(--accent)}
+.co-sub{font-family:var(--font-mono);font-size:10px;color:var(--muted2)}
+
+.compliance-bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:8px}
+.compliance-bar-fill{height:100%;border-radius:3px;transition:width .8s ease}
+.co-owasp .compliance-bar-fill{background:var(--accent2)}
+.co-pci   .compliance-bar-fill{background:var(--accent3)}
+.co-soc2  .compliance-bar-fill{background:var(--accent4)}
+
+.framework-section{margin-bottom:28px}
+.fw-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.fw-title{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.fw-badge{font-family:var(--font-mono);font-size:10px;padding:3px 10px;border:1px solid var(--border)}
+.fw-grid{display:flex;flex-direction:column;gap:2px}
+.fw-item{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:14px;transition:border-color .2s;animation:fadeUp .3s ease both}
+.fw-item.violated{border-left-color:var(--accent2)}
+.fw-item.clean{border-left-color:var(--accent);opacity:.6}
+.fw-item:hover{border-color:rgba(255,255,255,.1)}
+.fw-status{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.violated .fw-status{background:rgba(255,77,109,.2);color:var(--accent2)}
+.clean    .fw-status{background:rgba(99,255,180,.1);color:var(--accent)}
+.fw-id{font-family:var(--font-mono);font-size:10px;color:var(--muted2);flex-shrink:0;min-width:80px}
+.fw-name{flex:1;font-size:13px;font-weight:500}
+.fw-count{font-family:var(--font-mono);font-size:11px;color:var(--accent2);flex-shrink:0}
+.fw-sev{display:flex;gap:4px;flex-shrink:0}
+.sev-pip{font-family:var(--font-mono);font-size:9px;padding:2px 6px;border-radius:2px}
+.sev-CRITICAL{background:rgba(255,77,109,.15);color:var(--accent2)}
+.sev-HIGH{background:rgba(255,209,102,.1);color:var(--accent3)}
+.sev-MEDIUM{background:rgba(77,166,255,.1);color:var(--accent4)}
+
+/* ── PORTFOLIO ── */
+.portfolio-outer{padding:24px 48px}
+.repo-input-wrap{background:var(--surface);border:1px solid var(--border);overflow:hidden;margin-bottom:20px;position:relative}
+.repo-input-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.4}
+.repo-input-header{padding:12px 18px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);display:flex;align-items:center;justify-content:space-between}
+.repo-input-title{font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.06em}
+.repo-input-body{padding:18px}
+.repo-textarea{width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:12px 16px;outline:none;resize:none;transition:border-color .2s;line-height:1.8}
+.repo-textarea:focus{border-color:var(--accent)}
+.repo-textarea::placeholder{color:var(--muted2)}
+.repo-options{display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap}
+.opt-label{font-family:var(--font-mono);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:none}
+.opt-label input{accent-color:var(--accent)}
+.repo-actions{display:flex;gap:10px;margin-top:14px;align-items:center}
+.btn-scan{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:10px 24px;background:var(--accent);color:var(--bg);border:none;cursor:none;transition:all .2s;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);font-weight:700;display:flex;align-items:center;gap:8px}
+.btn-scan:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,255,180,.2)}
+.btn-scan:disabled{background:var(--muted2);clip-path:none;cursor:not-allowed}
+
+.portfolio-progress{margin-top:16px;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);font-family:var(--font-mono);font-size:12px;color:var(--accent3);display:none}
+.portfolio-progress.show{display:block}
+
+/* portfolio results */
+.portfolio-results{display:none;animation:fadeIn .3s ease}
+.portfolio-results.show{display:block}
+
+.org-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);margin-bottom:24px}
+.os-card{background:var(--surface);padding:16px 18px;text-align:center}
+.os-val{font-size:26px;font-weight:800;letter-spacing:-.03em;display:block}
+.os-lbl{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+
+.rankings-title{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text)}
+.repo-rank-list{display:flex;flex-direction:column;gap:2px;margin-bottom:28px}
+.repo-rank{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--border);padding:14px 18px;display:flex;align-items:center;gap:16px;animation:fadeUp .3s ease both;transition:border-color .2s}
+.repo-rank:hover{border-color:rgba(255,255,255,.1)}
+.repo-rank.grade-A{border-left-color:var(--accent)}
+.repo-rank.grade-B{border-left-color:#88ffcc}
+.repo-rank.grade-C{border-left-color:var(--accent3)}
+.repo-rank.grade-D{border-left-color:var(--accent2)}
+.repo-rank.grade-F{border-left-color:#cc2244}
+.repo-rank.has-error{border-left-color:var(--muted2);opacity:.6}
+.rr-pos{font-family:var(--font-mono);font-size:11px;color:var(--muted2);width:24px;flex-shrink:0;text-align:center}
+.rr-name{flex:1;min-width:0}
+.rr-repo{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rr-url{font-family:var(--font-mono);font-size:10px;color:var(--muted2);margin-top:2px}
+.rr-score{text-align:right;flex-shrink:0}
+.rr-score-val{font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.rr-grade{font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:1px}
+.rr-stats{display:flex;gap:10px;flex-shrink:0}
+.rr-stat{font-family:var(--font-mono);font-size:11px;font-weight:700}
+
+.systemic-section{margin-bottom:24px}
+.systemic-item{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent3);padding:16px 20px;margin-bottom:3px;animation:fadeUp .3s ease both}
+.si-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+.si-title{font-size:14px;font-weight:600}
+.si-repos{font-family:var(--font-mono);font-size:10px;color:var(--accent3);flex-shrink:0}
+.si-msg{font-family:var(--font-mono);font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:6px}
+.si-fix{font-family:var(--font-mono);font-size:11px;color:var(--accent);border-top:1px solid var(--border);padding-top:8px;margin-top:8px}
+.si-fix::before{content:'⚑ Fix: ';color:var(--muted2)}
+
+/* misc */
+.spinner{width:14px;height:14px;border:2px solid rgba(99,255,180,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+.empty-state{padding:60px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px}
+.empty-icon{font-size:36px;opacity:.1}
+.empty-title{font-size:18px;font-weight:700;color:var(--muted)}
+.empty-sub{font-family:var(--font-mono);font-size:11px;color:var(--muted2);max-width:340px;line-height:1.65}
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--surface);border:1px solid var(--border);padding:12px 18px;font-family:var(--font-mono);font-size:11px;color:var(--text);transform:translateY(50px);opacity:0;transition:all .3s ease;display:flex;align-items:center;gap:10px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast::before{content:'';width:2px;align-self:stretch;flex-shrink:0}
+.toast.success::before{background:var(--accent)}.toast.error::before{background:var(--accent2)}.toast.info::before{background:var(--accent4)}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--muted2)}
+</style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="grid-bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<nav>
+  <div class="nav-logo">
+    <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+      <path d="M14 2L3 7.5V16C3 21 7.8 25.5 14 27C20.2 25.5 25 21 25 16V7.5L14 2Z" stroke="#63ffb4" stroke-width="1.5" fill="none"/>
+      <path d="M10 14l3 3L18 11" stroke="#63ffb4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="nav-wordmark">Xentinel<span>AI</span></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="nav-badge">ENTERPRISE</div>
+    <a href="/" class="btn-back">← Dashboard</a>
+  </div>
+</nav>
+
+<div class="layout">
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('compliance')">⚖ Compliance Mapping</div>
+    <div class="tab" onclick="switchTab('portfolio')">🏢 Portfolio Scanner</div>
+  </div>
+
+  <!-- ── COMPLIANCE ── -->
+  <div class="panel active" id="panel-compliance">
+    <div class="sec-header">
+      <div class="sec-label">Enterprise Compliance</div>
+      <h2 class="sec-title">Compliance <span class="outline">Mapping.</span></h2>
+      <p class="sec-sub">OWASP Top 10 · CWE Top 25 · PCI-DSS v4.0 · SOC 2 — every finding tagged to the standards it violates.</p>
+    </div>
+    <div class="scan-selector">
+      <select class="scan-select" id="compliance-scan-select"><option value="">— Select a scan —</option></select>
+      <button class="btn-primary" id="compliance-load-btn" onclick="loadCompliance()" disabled>Map Compliance →</button>
+    </div>
+    <div class="compliance-outer" id="compliance-content">
+      <div class="empty-state">
+        <div class="empty-icon">⚖</div>
+        <div class="empty-title">No scan selected</div>
+        <div class="empty-sub">Select a scan to map findings against OWASP, PCI-DSS, SOC 2, and CWE Top 25.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PORTFOLIO ── -->
+  <div class="panel" id="panel-portfolio">
+    <div class="sec-header">
+      <div class="sec-label">Multi-Repo Analysis</div>
+      <h2 class="sec-title">Portfolio <span class="outline">Scanner.</span></h2>
+      <p class="sec-sub">Scan multiple repos in parallel — org-wide security posture, ranked repos, and systemic vulnerabilities shared across codebases.</p>
+    </div>
+    <div class="portfolio-outer">
+      <div class="repo-input-wrap">
+        <div class="repo-input-header">
+          <div class="repo-input-title">xentinel-portfolio · repository list</div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted2)">max 10 repos</div>
+        </div>
+        <div class="repo-input-body">
+          <textarea class="repo-textarea" id="portfolio-repos" rows="5"
+            placeholder="https://github.com/owner/repo1&#10;https://github.com/owner/repo2&#10;https://github.com/owner/repo3"></textarea>
+          <div class="repo-options">
+            <label class="opt-label"><input type="checkbox" id="portfolio-skip-ai" checked> Skip AI enrichment (recommended — saves tokens)</label>
+            <label class="opt-label"><input type="number" id="portfolio-workers" value="3" min="1" max="5" style="width:40px;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:2px 6px;font-family:var(--font-mono);font-size:11px"> parallel workers</label>
+          </div>
+          <div class="repo-actions">
+            <button class="btn-scan" id="portfolio-scan-btn" onclick="startPortfolioScan()">
+              <span id="portfolio-btn-text">Scan Portfolio →</span>
+            </button>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted2)">One GitHub URL per line</span>
+          </div>
+          <div class="portfolio-progress" id="portfolio-progress"></div>
+        </div>
+      </div>
+      <div class="portfolio-results" id="portfolio-results"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = window.XENTINEL_API || 'http://localhost:8000';
+
+// ── Cursor ──────────────────────────────────────────────────────────────────
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function tick(){rx+=(mx-rx)*.1;ry+=(my-ry)*.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(tick);})();
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',['compliance','portfolio'][i]===name);});
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+}
+
+// ── Load scans ───────────────────────────────────────────────────────────────
+async function loadScans(){
+  try{
+    const resp = await fetch(`${API}/scans?limit=50`);
+    if(!resp.ok) return;
+    const scans = await resp.json();
+    const sel = document.getElementById('compliance-scan-select');
+    scans.forEach(s=>{
+      const opt = document.createElement('option');
+      opt.value = s.scan_id;
+      const date = s.scanned_at.replace('T',' ').slice(0,16);
+      opt.textContent = `${s.repo}  ·  ${date}  ·  ${s.stats?.total||0} findings`;
+      sel.appendChild(opt);
+    });
+    // Enable button immediately if scans exist, and on every change
+    if(scans.length > 0){
+      sel.value = scans[0].scan_id;
+      document.getElementById('compliance-load-btn').disabled = false;
+    }
+    sel.onchange = ()=>{document.getElementById('compliance-load-btn').disabled=!sel.value;};
+  }catch(e){toast('Could not load scans','error');}
+}
+
+// ── COMPLIANCE ───────────────────────────────────────────────────────────────
+async function loadCompliance(){
+  const scanId = document.getElementById('compliance-scan-select').value;
+  if(!scanId) return;
+  const content = document.getElementById('compliance-content');
+  content.innerHTML = `<div class="empty-state"><div class="spinner"></div><div class="empty-sub" style="margin-top:12px">Mapping findings to compliance frameworks...</div></div>`;
+  try{
+    const resp = await fetch(`${API}/scan/${scanId}/compliance`);
+    if(!resp.ok) throw new Error(await resp.text());
+    const data = await resp.json();
+    renderCompliance(data);
+  }catch(e){
+    content.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-title">Failed</div><div class="empty-sub">${esc(String(e))}</div></div>`;
+  }
+}
+
+function renderCompliance(data){
+  const ov = data.overall || {};
+  const owasp   = ov.owasp   || {violated:0,total:10,pct:0};
+  const pci     = ov.pci_dss || {violated:0,total:7,pct:0};
+  const soc2    = ov.soc2    || {violated:0,total:6,pct:0};
+  const cweHit  = ov.cwe_top25_hit || 0;
+
+  let html = `
+    <div class="compliance-overview">
+      <div class="co-card co-owasp">
+        <div class="co-label">OWASP Top 10</div>
+        <div class="co-main">${owasp.violated}/${owasp.total}</div>
+        <div class="co-sub">categories violated</div>
+        <div class="compliance-bar"><div class="compliance-bar-fill" style="width:${owasp.pct}%"></div></div>
+      </div>
+      <div class="co-card co-pci">
+        <div class="co-label">PCI-DSS v4.0</div>
+        <div class="co-main">${pci.violated}/${pci.total}</div>
+        <div class="co-sub">requirements violated</div>
+        <div class="compliance-bar"><div class="compliance-bar-fill" style="width:${pci.pct}%"></div></div>
+      </div>
+      <div class="co-card co-soc2">
+        <div class="co-label">SOC 2</div>
+        <div class="co-main">${soc2.violated}/${soc2.total}</div>
+        <div class="co-sub">criteria violated</div>
+        <div class="compliance-bar"><div class="compliance-bar-fill" style="width:${soc2.pct}%"></div></div>
+      </div>
+      <div class="co-card co-cwe">
+        <div class="co-label">CWE Top 25</div>
+        <div class="co-main">${cweHit}/25</div>
+        <div class="co-sub">weaknesses present</div>
+      </div>
+    </div>`;
+
+  // OWASP
+  html += renderFramework('OWASP Top 10 (2021)', data.owasp || {}, 'owasp');
+  // PCI-DSS
+  html += renderFramework('PCI-DSS v4.0', data.pci_dss || {}, 'pci');
+  // SOC 2
+  html += renderFramework('SOC 2 Trust Service Criteria', data.soc2 || {}, 'soc2');
+  // CWE Top 25
+  if(Object.keys(data.cwe_top25||{}).length){
+    html += `<div class="framework-section">
+      <div class="fw-header"><div class="fw-title">CWE Top 25 (2023) — Matched</div></div>
+      <div class="fw-grid">`;
+    Object.entries(data.cwe_top25).forEach(([id,v],i)=>{
+      const sevHtml = Object.entries(v.severities||{}).map(([s,c])=>
+        `<span class="sev-pip sev-${esc(s)}">${esc(s[0])}:${c}</span>`).join('');
+      html += `<div class="fw-item violated" style="animation-delay:${i*.03}s">
+        <div class="fw-status">✕</div>
+        <div class="fw-id">${esc(id)}</div>
+        <div class="fw-name">${esc(v.name)}</div>
+        <div class="fw-sev">${sevHtml}</div>
+        <div class="fw-count">${v.finding_count} finding${v.finding_count!==1?'s':''}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  document.getElementById('compliance-content').innerHTML = html;
+}
+
+function renderFramework(title, items, prefix){
+  const entries = Object.entries(items);
+  const violated = entries.filter(([,v])=>v.violated);
+  let html = `<div class="framework-section">
+    <div class="fw-header">
+      <div class="fw-title">${esc(title)}</div>
+      <div class="fw-badge" style="color:${violated.length?'var(--accent2)':'var(--accent)'}">${violated.length} violated</div>
+    </div>
+    <div class="fw-grid">`;
+  entries.forEach(([id,v],i)=>{
+    const cls = v.violated ? 'violated' : 'clean';
+    const icon = v.violated ? '✕' : '✓';
+    const sevHtml = Object.entries(v.severities||{}).map(([s,c])=>
+      `<span class="sev-pip sev-${esc(s)}">${esc(s[0])}:${c}</span>`).join('');
+    html += `<div class="fw-item ${cls}" style="animation-delay:${i*.03}s">
+      <div class="fw-status">${icon}</div>
+      <div class="fw-id">${esc(id)}</div>
+      <div class="fw-name">${esc(v.name)}</div>
+      <div class="fw-sev">${sevHtml}</div>
+      ${v.violated?`<div class="fw-count">${v.finding_count} finding${v.finding_count!==1?'s':''}</div>`:''}
+    </div>`;
+  });
+  html += `</div></div>`;
+  return html;
+}
+
+// ── PORTFOLIO ────────────────────────────────────────────────────────────────
+async function startPortfolioScan(){
+  const raw = document.getElementById('portfolio-repos').value.trim();
+  if(!raw){ toast('Enter at least one GitHub URL','error'); return; }
+
+  const repos = raw.split('\n').map(l=>l.trim()).filter(l=>l.startsWith('http'));
+  if(!repos.length){ toast('No valid GitHub URLs found','error'); return; }
+  if(repos.length > 10){ toast('Maximum 10 repos per portfolio scan','error'); return; }
+
+  const skipAi  = document.getElementById('portfolio-skip-ai').checked;
+  const workers = parseInt(document.getElementById('portfolio-workers').value) || 3;
+
+  const btn  = document.getElementById('portfolio-scan-btn');
+  const btxt = document.getElementById('portfolio-btn-text');
+  btn.disabled = true;
+  btxt.innerHTML = '<span class="spinner"></span> Scanning...';
+
+  const prog = document.getElementById('portfolio-progress');
+  prog.className = 'portfolio-progress show';
+  prog.textContent = `Scanning ${repos.length} repos in parallel (${workers} workers, skip_ai=${skipAi})...`;
+
+  document.getElementById('portfolio-results').className = 'portfolio-results';
+
+  try{
+    const resp = await fetch(`${API}/portfolio/scan`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({repos, skip_ai: skipAi, max_workers: workers}),
+    });
+    if(!resp.ok) throw new Error(await resp.text());
+    const data = await resp.json();
+    prog.className = 'portfolio-progress';
+    renderPortfolio(data);
+    toast(`Portfolio scan complete — ${data.repos_scanned} repos`, 'success');
+  }catch(e){
+    prog.textContent = 'Scan failed: ' + String(e).slice(0,100);
+    toast('Portfolio scan failed','error');
+  }finally{
+    btn.disabled = false;
+    btxt.textContent = 'Scan Portfolio →';
+  }
+}
+
+function renderPortfolio(data){
+  const wrap = document.getElementById('portfolio-results');
+  const org  = data.org_stats || {};
+  const avgScore = org.average_score ?? 0;
+  const grade    = org.average_grade ?? '?';
+  const gradeColor = {A:'var(--accent)',B:'#88ffcc',C:'var(--accent3)',D:'var(--accent2)',F:'#cc2244'}[grade]||'var(--muted)';
+
+  let html = `
+    <div class="org-stats">
+      <div class="os-card"><span class="os-val" style="color:${gradeColor}">${avgScore}</span><span class="os-lbl">Avg Score</span></div>
+      <div class="os-card"><span class="os-val" style="color:var(--text)">${esc(grade)}</span><span class="os-lbl">Avg Grade</span></div>
+      <div class="os-card"><span class="os-val" style="color:var(--accent2)">${org.total_critical||0}</span><span class="os-lbl">Critical</span></div>
+      <div class="os-card"><span class="os-val" style="color:var(--accent3)">${org.total_high||0}</span><span class="os-lbl">High</span></div>
+      <div class="os-card"><span class="os-val" style="color:var(--text)">${org.total_findings||0}</span><span class="os-lbl">Total Findings</span></div>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:20px">${esc(data.summary||'')}</div>`;
+
+  // Repo rankings
+  html += `<div class="rankings-title">Repositories — Worst to Best</div><div class="repo-rank-list">`;
+  (data.repo_rankings||[]).forEach((r,i)=>{
+    if(r.error){
+      html += `<div class="repo-rank has-error" style="animation-delay:${i*.05}s">
+        <div class="rr-pos">${i+1}</div>
+        <div class="rr-name"><div class="rr-repo">${esc(r.repo)}</div><div class="rr-url" style="color:var(--accent2)">Scan failed: ${esc(r.error.slice(0,60))}</div></div>
+      </div>`;
+      return;
+    }
+    const gc = {A:'var(--accent)',B:'#88ffcc',C:'var(--accent3)',D:'var(--accent2)',F:'#cc2244'}[r.grade]||'var(--muted)';
+    html += `<div class="repo-rank grade-${esc(r.grade)}" style="animation-delay:${i*.05}s">
+      <div class="rr-pos">${i+1}</div>
+      <div class="rr-name">
+        <div class="rr-repo">${esc(r.repo)}</div>
+        <div class="rr-url">${esc(r.repo_url)}</div>
+      </div>
+      <div class="rr-stats">
+        <span class="rr-stat" style="color:var(--accent2)">${r.critical}C</span>
+        <span class="rr-stat" style="color:var(--accent3)">${r.high}H</span>
+        <span class="rr-stat" style="color:var(--muted)">${r.total} total</span>
+      </div>
+      <div class="rr-score">
+        <div class="rr-score-val" style="color:${gc}">${r.score}</div>
+        <div class="rr-grade" style="color:${gc}">${r.grade}</div>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // Systemic issues
+  const sys = data.systemic_issues || [];
+  if(sys.length){
+    html += `<div class="systemic-section">
+      <div class="rankings-title">Systemic Issues — ${sys.length} vulnerability pattern${sys.length!==1?'s':''} shared across repos</div>`;
+    sys.forEach((s,i)=>{
+      const sevColor = {CRITICAL:'var(--accent2)',HIGH:'var(--accent3)',MEDIUM:'var(--accent4)'}[s.severity]||'var(--muted)';
+      html += `<div class="systemic-item" style="animation-delay:${i*.05}s">
+        <div class="si-header">
+          <div class="si-title"><span style="color:${sevColor}">[${esc(s.severity)}]</span> ${esc(s.title)}</div>
+          <div class="si-repos">${s.repo_count} repos · ${s.total_occurrences} occurrences</div>
+        </div>
+        <div class="si-msg">${esc(s.message)}</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);margin-bottom:4px">Affected: ${s.repos_affected.map(r=>`<code style="color:var(--accent4)">${esc(r)}</code>`).join(', ')}</div>
+        ${s.fix_hint?`<div class="si-fix">${esc(s.fix_hint)}</div>`:''}
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  wrap.innerHTML = html;
+  wrap.className = 'portfolio-results show';
+}
+
+// ── Utils ────────────────────────────────────────────────────────────────────
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+let _tt;
+function toast(msg,type='info'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className=`toast ${type} show`;
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+loadScans();
+</script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>XentinelAI vs All</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&display=swap" rel="stylesheet">
+
+<style>
+body{
+  margin:0;
+  background:#000;
+  font-family:'Syne', sans-serif;
+  color:#fff;
+}
+
+/* Keep your original styles */
+:root{
+  --accent:#63ffb4;
+  --accent2:#ff4d6d;
+  --accent3:#ffd166;
+  --accent4:#4da6ff;
+}
+
+/* Layout fix */
+.wrapper{
+  max-width:1200px;
+  margin:auto;
+  padding:40px 20px;
+}
+
+/* Title */
+h1{
+  text-align:center;
+  color:var(--accent);
+  font-size:2.8rem;
+  margin-bottom:5px;
+}
+
+.subtitle{
+  text-align:center;
+  color:#aaa;
+  font-weight:400;
+  margin-bottom:25px;
+}
+
+/* Legend */
+.legend{
+  text-align:center;
+  margin-bottom:20px;
+  font-size:0.9rem;
+  font-weight:400;
+}
+.legend span{
+  margin:0 10px;
+}
+
+.good{ color:var(--accent); }
+.bad{ color:var(--accent2); }
+.partial{ color:var(--accent3); }
+.neutral{ color:var(--accent4); }
+
+/* Table */
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th, td{
+  padding:14px;
+  border:1px solid #222;
+  text-align:left;
+  font-weight:400;
+}
+
+th{
+  background:#111;
+  color:var(--accent);
+  text-align:center;
+}
+
+/* Highlight YOUR TOOL column */
+td:nth-child(4), th:nth-child(4){
+  background:rgba(99,255,180,0.08);
+}
+
+/* Alternate rows */
+tr:nth-child(even){
+  background:#0a0a0a;
+}
+
+/* Flip card */
+.flip-card{
+  width:340px;
+  height:200px;
+  margin:40px auto 0;
+  perspective:1000px;
+}
+
+.flip-card-inner{
+  width:100%;
+  height:100%;
+  transition:transform 0.6s;
+  transform-style:preserve-3d;
+  position:relative;
+}
+
+.flip-card:hover .flip-card-inner{
+  transform:rotateY(180deg);
+}
+
+.flip-card-front, .flip-card-back{
+  position:absolute;
+  width:100%;
+  height:100%;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  backface-visibility:hidden;
+}
+
+.flip-card-front{
+  background:#111;
+  border:2px solid var(--accent);
+}
+
+.flip-card-back{
+  background:#111;
+  border:2px solid var(--accent3);
+  transform:rotateY(180deg);
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+
+<h1>XentinelAI vs All</h1>
+<p class="subtitle">Code Review vs AI Coding vs Security Intelligence</p>
+
+<div class="legend">
+  <span class="good">● Strength</span>
+  <span class="partial">● Partial</span>
+  <span class="neutral">● Different</span>
+  <span class="bad">● Limitation</span>
+</div>
+
+<table>
+<tr>
+  <th>Feature</th>
+  <th>CodeAnt AI</th>
+  <th>Claude Code / Clawbot</th>
+  <th>XentinelAI</th>
+</tr>
+
+<tr>
+  <td>Primary Role</td>
+  <td class="bad">PR review automation</td>
+  <td class="neutral">AI coding assistant</td>
+  <td class="good">Security + attack simulation</td>
+</tr>
+
+<tr>
+  <td>When Used</td>
+  <td class="bad">After coding</td>
+  <td class="neutral">During coding</td>
+  <td class="good">After + analysis stage</td>
+</tr>
+
+<tr>
+  <td>Security Depth</td>
+  <td class="bad">Static checks</td>
+  <td class="partial">Prompt-dependent</td>
+  <td class="good">Real attack simulation</td>
+</tr>
+
+<tr>
+  <td>False Positives</td>
+  <td class="bad">Common</td>
+  <td class="partial">Possible</td>
+  <td class="good">Prioritized results</td>
+</tr>
+
+<tr>
+  <td>Code Generation</td>
+  <td class="bad">None</td>
+  <td class="good">Strong</td>
+  <td class="partial">Fix-focused only</td>
+</tr>
+
+<tr>
+  <td>Fix Handling</td>
+  <td class="partial">Suggestions</td>
+  <td class="partial">Manual apply</td>
+  <td class="good">Auto PR creation</td>
+</tr>
+
+<tr>
+  <td>Attack Awareness</td>
+  <td class="bad">None</td>
+  <td class="bad">None</td>
+  <td class="good">Attack chains</td>
+</tr>
+
+<tr>
+  <td>Alerts</td>
+  <td class="bad">Limited</td>
+  <td class="bad">None</td>
+  <td class="good">SNS alerts</td>
+</tr>
+
+<tr>
+  <td>Data Storage</td>
+  <td class="bad">Not focused</td>
+  <td class="bad">None</td>
+  <td class="good">DynamoDB</td>
+</tr>
+
+<tr>
+  <td>Human Dependency</td>
+  <td class="bad">High</td>
+  <td class="partial">Medium</td>
+  <td class="partial">Reduced</td>
+</tr>
+
+</table>
+
+<div class="flip-card">
+  <div class="flip-card-inner">
+    <div class="flip-card-front">
+      <p>🧠 Key Insight</p>
+    </div>
+    <div class="flip-card-back">
+      <p>
+        Claude writes code, CodeAnt reviews it, 
+        XentinelAI simulates attacks and fixes real risks.
+      </p>
+    </div>
+  </div>
+</div>
+
+</div>
+
+</body>
+</html>
