@@ -89,8 +89,15 @@ def get_trend_data(reports_dir: str, limit: int = 50) -> Dict[str, Any]:
 def _compute_score(total: int, critical: int, high: int, medium: int) -> int:
     if total == 0:
         return 100
-    penalty = (critical * 10) + (high * 4) + (medium * 1)
-    score   = max(0, 100 - penalty)
+    # Hybrid formula:
+    # - Severity ratio component (what % of findings are critical/high)
+    # - Absolute penalty component (raw count of critical/high issues)
+    # Both contribute so large clean repos score well and small bad repos score poorly.
+    weighted     = (critical * 3) + (high * 2) + (medium * 1)
+    max_possible = total * 3
+    ratio_penalty = (weighted / max_possible) * 60   # up to 60 pts from ratio
+    abs_penalty   = min(40, (critical * 3) + (high * 1))  # up to 40 pts from absolutes
+    score = max(0, round(100 - ratio_penalty - abs_penalty))
     return score
 
 

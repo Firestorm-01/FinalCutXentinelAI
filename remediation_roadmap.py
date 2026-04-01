@@ -26,23 +26,73 @@ SEV_WEIGHT = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}
 
 # Estimated fix effort in minutes per rule type
 EFFORT_MAP = {
-    "sql":           ("15–30 min", "Replace string interpolation with prepared statements"),
-    "exec":          ("15–30 min", "Wrap user input with escapeshellarg() or pass as list arg"),
-    "xss":           ("10–20 min", "Escape output with htmlentities() or a template engine"),
-    "phpinfo":       ("5 min",     "Remove or gate phpinfo() calls behind auth"),
-    "cors":          ("10 min",    "Replace wildcard origin with specific allowed domains"),
-    "hardcoded":     ("20–40 min", "Move credentials to environment variables or secrets manager"),
-    "path":          ("15–25 min", "Validate and sanitise filename inputs, use basename()"),
-    "filename":      ("15–25 min", "Validate and sanitise filename inputs, use basename()"),
-    "iam":           ("30–60 min", "Replace wildcard actions with least-privilege policy"),
-    "imds":          ("5 min",     "Set http_tokens = required in metadata_options block"),
-    "public":        ("10 min",    "Set publicly_accessible = false / ACL to private"),
-    "security_group":("15 min",   "Restrict CIDR blocks to known IP ranges"),
-    "default":       ("20–40 min", "Review and apply the recommended fix"),
+    # Code vulnerability patterns
+    "sql":            ("15–30 min", "Replace string interpolation with prepared statements"),
+    "exec":           ("15–30 min", "Wrap user input with escapeshellarg() or pass as list arg"),
+    "xss":            ("10–20 min", "Escape output with htmlentities() or a template engine"),
+    "phpinfo":        ("5 min",     "Remove or gate phpinfo() calls behind auth"),
+    "cors":           ("10 min",    "Replace wildcard origin with specific allowed domains"),
+    "hardcoded":      ("20–40 min", "Move credentials to environment variables or secrets manager"),
+    "path":           ("15–25 min", "Validate and sanitise filename inputs, use basename()"),
+    "filename":       ("15–25 min", "Validate and sanitise filename inputs, use basename()"),
+    "iam":            ("30–60 min", "Replace wildcard actions with least-privilege policy"),
+    "imds":           ("5 min",     "Set http_tokens = required in metadata_options block"),
+    "public":         ("10 min",    "Set publicly_accessible = false / ACL to private"),
+    "security_group": ("15 min",    "Restrict CIDR blocks to known IP ranges"),
+    # Checkov S3 rules
+    "ckv_aws_20":     ("5 min",     "Set ACL to private on the S3 bucket resource"),
+    "ckv_aws_53":     ("5 min",     "Enable S3 Block Public Access on the bucket"),
+    "ckv_aws_54":     ("5 min",     "Add a bucket policy that denies public access"),
+    "ckv_aws_55":     ("5 min",     "Set block_public_acls and block_public_policy to true"),
+    "ckv_aws_56":     ("5 min",     "Set ignore_public_acls and restrict_public_buckets to true"),
+    "ckv_aws_18":     ("10 min",    "Add a logging block pointing to a log bucket"),
+    "ckv_aws_21":     ("5 min",     "Add versioning { enabled = true } to the S3 bucket"),
+    "ckv2_aws_61":    ("5 min",     "Add versioning { enabled = true } to the S3 bucket"),
+    "ckv2_aws_62":    ("5 min",     "Add event notification configuration to the S3 bucket"),
+    "ckv2_aws_6":     ("5 min",     "Add aws_s3_bucket_public_access_block resource"),
+    "ckv_aws_144":    ("20 min",    "Configure cross-region replication on the S3 bucket"),
+    "ckv_aws_145":    ("5 min",     "Set server_side_encryption_configuration on the bucket"),
+    # Checkov RDS rules
+    "ckv_aws_16":     ("5 min",     "Set storage_encrypted = true on the RDS instance"),
+    "ckv_aws_17":     ("5 min",     "Set publicly_accessible = false on the RDS instance"),
+    "ckv_aws_129":    ("10 min",    "Enable auto minor version upgrade on the RDS instance"),
+    "ckv_aws_157":    ("10 min",    "Enable multi-AZ on the RDS instance"),
+    "ckv_aws_161":    ("10 min",    "Enable IAM database authentication on the RDS instance"),
+    "ckv_aws_226":    ("5 min",     "Enable deletion protection on the RDS instance"),
+    "ckv_aws_293":    ("10 min",    "Enable Performance Insights on the RDS instance"),
+    "ckv_aws_353":    ("5 min",     "Set a non-default port on the RDS instance"),
+    "ckv_aws_354":    ("10 min",    "Enable automated backups on the RDS instance"),
+    "ckv2_aws_60":    ("10 min",    "Configure RDS instance in a VPC with subnet group"),
+    "ckv_aws_118":    ("10 min",    "Enable Enhanced Monitoring on the RDS instance"),
+    # Checkov EC2 rules
+    "ckv_aws_8":      ("5 min",     "Set associate_public_ip_address = false on EC2 instance"),
+    "ckv_aws_79":     ("5 min",     "Set http_tokens = required in metadata_options block"),
+    "ckv_aws_88":     ("5 min",     "Set associate_public_ip_address = false on EC2 instance"),
+    "ckv_aws_126":    ("10 min",    "Enable detailed monitoring on the EC2 instance"),
+    "ckv_aws_135":    ("10 min",    "Enable EBS optimisation on the EC2 instance"),
+    "ckv_aws_260":    ("5 min",     "Remove or restrict HTTP (port 80) ingress rule"),
+    "ckv2_aws_41":    ("15 min",    "Assign an IAM instance profile to the EC2 instance"),
+    # Checkov Security Group rules
+    "ckv_aws_23":     ("10 min",    "Restrict SSH ingress to known CIDR blocks"),
+    "ckv_aws_24":     ("10 min",    "Restrict RDP ingress to known CIDR blocks"),
+    "ckv_aws_25":     ("10 min",    "Restrict all ingress to known CIDR blocks"),
+    # Checkov IAM rules
+    "ckv_aws_40":     ("20 min",    "Attach policies to groups or roles, not directly to users"),
+    "ckv_aws_107":    ("20 min",    "Remove IAM actions that expose credentials"),
+    "ckv_aws_109":    ("20 min",    "Remove IAM actions that allow privilege escalation"),
+    "ckv_aws_110":    ("20 min",    "Remove IAM actions that allow privilege escalation"),
+    "ckv_aws_111":    ("20 min",    "Replace wildcard Resource * with specific ARNs"),
+    "ckv_aws_274":    ("20 min",    "Replace AdministratorAccess with a least-privilege policy"),
+    "default":        ("10–20 min", "Review and apply the recommended fix"),
 }
 
 
 def _effort(rule_id: str, title: str) -> Tuple[str, str]:
+    # First try exact match on lowercased rule_id (covers CKV_AWS_21 etc.)
+    rule_lower = rule_id.lower().replace("-", "_")
+    if rule_lower in EFFORT_MAP:
+        return EFFORT_MAP[rule_lower]
+    # Then try keyword match across rule_id + title
     combined = f"{rule_id} {title}".lower()
     for key, val in EFFORT_MAP.items():
         if key in combined:
