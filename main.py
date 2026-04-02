@@ -8,7 +8,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
-
+from mitre_attack import build_attack_map
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from models import ScanResult, Severity
@@ -28,6 +28,10 @@ from nlp_query import answer_question
 from trend_api import get_trend_data
 from compliance_map import build_compliance_report
 from portfolio_scanner import run_portfolio_scan
+from secret_advisor import build_secret_advisor
+from fix_confidence import build_confidence_report
+from dep_scanner import scan_dependencies
+from threat_feed import get_latest_threats, get_kev_feed, force_refresh, start_background_poller
 load_dotenv()
 
 try:
@@ -78,6 +82,13 @@ class PortfolioRequest(BaseModel):
     repos:       list[str]
     skip_ai:     bool = True
     max_workers: int  = 3
+
+
+# ── Startup ───────────────────────────────────────────────────────────────────
+
+@app.on_event("startup")
+async def startup():
+    start_background_poller(REPORTS_DIR)
 
 
 # ── Pipeline ──────────────────────────────────────────────────────────────────
@@ -233,7 +244,7 @@ def health():
 
 @app.get("/{filename}.html")
 def serve_html(filename: str):
-    allowed = {"dashboard", "card", "simulation", "comparison", "insights", "compliance"}
+    allowed = {"dashboard", "card", "simulation", "comparison", "insights", "compliance", "threats","tools","attack"}
     if filename not in allowed:
         raise HTTPException(status_code=404, detail="Not found")
     path = os.path.join(BASE_DIR, f"{filename}.html")
@@ -348,6 +359,55 @@ def portfolio_scan(req: PortfolioRequest):
     )
 
 
+# ── Threat feed endpoints — literal paths, before /scan/{scan_id} ─────────────
+
+@app.get("/threats/latest")
+def threats_latest():
+    return get_latest_threats(REPORTS_DIR)
+
+
+@app.get("/threats/kev")
+def threats_kev():
+    return get_kev_feed(REPORTS_DIR)
+
+
+@app.post("/threats/refresh")
+def threats_refresh():
+    return force_refresh(REPORTS_DIR)
+
+
+# ── Dependency scan — literal path, before /scan/{scan_id} ───────────────────
+
+@app.post("/scan/deps")
+async def scan_deps(file: UploadFile = File(...)):
+    """Scan a ZIP repo for vulnerable dependencies via OSV."""
+    import tempfile
+    import zipfile as zf
+
+    contents = await file.read()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        zip_path = os.path.join(tmpdir, "repo.zip")
+        with open(zip_path, "wb") as f:
+            f.write(contents)
+        try:
+            with zf.ZipFile(zip_path) as z:
+                z.extractall(tmpdir)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid ZIP: {e}")
+
+        result = scan_dependencies(tmpdir)  # returns a full dict, not a list
+
+    # scan_dependencies() already returns the complete structured dict:
+    # { findings: [...], total: int, critical: int, high: int,
+    #   medium: int, low: int, with_fix: int, manifests_scanned: [...],
+    #   packages_checked: int, error: str|None }
+    # Return it directly — never re-wrap it or the frontend gets data.findings.findings.
+    if result.get("error"):
+        raise HTTPException(status_code=500, detail=result["error"])
+
+    return result
+
+
 # ── Per-scan endpoints ────────────────────────────────────────────────────────
 
 @app.get("/scan/{scan_id}")
@@ -417,6 +477,25 @@ def get_compliance(scan_id: str):
     scan_id = _safe_scan_id(scan_id)
     scan = _load_scan_json(scan_id)
     return build_compliance_report(scan)
+
+
+@app.get("/scan/{scan_id}/secret-advisor")
+def get_secret_advisor(scan_id: str):
+    scan_id = _safe_scan_id(scan_id)
+    scan = _load_scan_json(scan_id)
+    return build_secret_advisor(scan)
+
+
+@app.get("/scan/{scan_id}/confidence")
+def get_confidence(scan_id: str):
+    scan_id = _safe_scan_id(scan_id)
+    scan = _load_scan_json(scan_id)
+    return build_confidence_report(scan)
+@app.get("/scan/{scan_id}/attack-map")
+def get_attack_map(scan_id: str):
+    scan_id = _safe_scan_id(scan_id)
+    scan = _load_scan_json(scan_id)
+    return build_attack_map(scan)
 
 
 @app.post("/scan/{scan_id}/ask")

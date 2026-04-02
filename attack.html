@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>XentinelAI — ATT&CK Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#050608;--bg2:#080b10;--surface:#0d1117;--surface2:#111820;
+  --border:rgba(255,255,255,0.07);--border-bright:rgba(99,255,180,0.25);
+  --accent:#63ffb4;--accent2:#ff4d6d;--accent3:#ffd166;--accent4:#4da6ff;
+  --text:#e8edf5;--muted:#a9acb0;--muted2:#555f72;
+  --font-display:'Syne',sans-serif;--font-mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);min-height:100vh;overflow-x:hidden;cursor:none}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9000;opacity:.4}
+.grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(99,255,180,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(99,255,180,.03) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black,transparent)}
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+.orb-1{width:500px;height:500px;background:radial-gradient(circle,rgba(255,77,109,.06),transparent 70%);top:-150px;right:-100px;animation:float1 9s ease-in-out infinite}
+.orb-2{width:400px;height:400px;background:radial-gradient(circle,rgba(99,255,180,.04),transparent 70%);bottom:0;left:-100px;animation:float2 11s ease-in-out infinite}
+@keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,40px)}}
+@keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-30px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.cursor{position:fixed;width:10px;height:10px;background:var(--accent);border-radius:50%;pointer-events:none;z-index:9999;mix-blend-mode:screen;transform:translate(-50%,-50%)}
+.cursor-ring{position:fixed;width:34px;height:34px;border:1px solid rgba(99,255,180,.4);border-radius:50%;pointer-events:none;z-index:9998;transition:width .2s,height .2s;transform:translate(-50%,-50%)}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:500;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(5,6,8,.97),transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-wordmark{font-family:var(--font-display);font-weight:800;font-size:17px;letter-spacing:-.02em}
+.nav-wordmark span{color:var(--accent)}
+.nav-badge{font-family:var(--font-mono);font-size:10px;color:var(--accent);border:1px solid var(--border-bright);padding:4px 10px;letter-spacing:.08em}
+.btn-back{font-family:var(--font-mono);font-size:11px;color:var(--muted);background:transparent;border:1px solid var(--border);padding:7px 14px;cursor:none;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn-back:hover{border-color:var(--accent);color:var(--accent)}
+
+.layout{padding-top:57px;min-height:100vh;position:relative;z-index:1}
+.sec-header{padding:36px 48px 20px;border-bottom:1px solid var(--border)}
+.sec-label{font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.sec-label::after{content:'';flex:1;max-width:50px;height:1px;background:var(--border-bright)}
+.sec-title{font-size:clamp(24px,3vw,38px);font-weight:800;letter-spacing:-.03em;line-height:1.05}
+.sec-title .outline{color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.6)}
+.sec-sub{font-family:var(--font-mono);font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6}
+
+.scan-selector{padding:20px 48px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.scan-select{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:9px 14px;outline:none;cursor:pointer;transition:border-color .2s;min-width:320px}
+.scan-select:focus{border-color:var(--accent)}
+.btn-load{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:9px 20px;background:var(--accent);color:var(--bg);border:none;cursor:none;transition:all .2s;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);font-weight:700}
+.btn-load:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,255,180,.2)}
+.btn-load:disabled{background:var(--muted2);clip-path:none;cursor:not-allowed}
+
+.outer{padding:24px 48px}
+
+/* Coverage stats */
+.coverage-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);margin-bottom:28px;animation:fadeUp .4s ease}
+.cv-card{background:var(--surface);padding:18px 22px;position:relative;overflow:hidden}
+.cv-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent)}
+.cv-val{font-size:28px;font-weight:800;letter-spacing:-.03em;color:var(--accent);line-height:1;margin-bottom:4px}
+.cv-lbl{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+
+/* Kill chain */
+.kill-chain-wrap{margin-bottom:28px}
+.kc-title{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text)}
+.kill-chain{display:flex;gap:2px;flex-wrap:wrap}
+.kc-phase{flex:1;min-width:80px;padding:10px 8px;text-align:center;position:relative;border:1px solid var(--border);background:var(--surface);transition:all .2s}
+.kc-phase.detected{background:rgba(255,77,109,.08);border-color:rgba(255,77,109,.3)}
+.kc-phase.detected .kc-dot{background:var(--accent2);box-shadow:0 0 8px rgba(255,77,109,.5)}
+.kc-phase::after{content:'▶';position:absolute;right:-8px;top:50%;transform:translateY(-50%);font-size:8px;color:var(--muted2);z-index:1}
+.kc-phase:last-child::after{display:none}
+.kc-dot{width:8px;height:8px;border-radius:50%;background:var(--muted2);margin:0 auto 6px}
+.kc-name{font-family:var(--font-mono);font-size:8px;color:var(--muted);letter-spacing:.04em;line-height:1.3}
+.kc-phase.detected .kc-name{color:var(--accent2)}
+
+/* Techniques grid */
+.techniques-title{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text)}
+.techniques-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:2px;margin-bottom:28px}
+.tech-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--muted2);padding:14px 16px;animation:fadeUp .3s ease both;transition:border-color .2s;cursor:none}
+.tech-card:hover{border-color:rgba(255,255,255,.1)}
+.tc-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:6px}
+.tc-id{font-family:var(--font-mono);font-size:10px;color:var(--accent4);flex-shrink:0;min-width:80px}
+.tc-id a{color:inherit;text-decoration:none}
+.tc-id a:hover{text-decoration:underline}
+.tc-name{font-size:13px;font-weight:600;flex:1}
+.tc-tactic{font-family:var(--font-mono);font-size:9px;padding:2px 7px;background:rgba(99,255,180,.08);color:var(--accent);border:1px solid rgba(99,255,180,.15);flex-shrink:0;white-space:nowrap}
+.tc-summary{font-family:var(--font-mono);font-size:10px;color:var(--muted);line-height:1.55;margin-bottom:8px}
+.tc-footer{display:flex;align-items:center;justify-content:space-between}
+.tc-count{font-family:var(--font-mono);font-size:10px;color:var(--accent2)}
+.tc-sevs{display:flex;gap:4px}
+.sev-pip{font-family:var(--font-mono);font-size:8px;padding:1px 5px}
+.sev-CRITICAL{background:rgba(255,77,109,.15);color:var(--accent2)}
+.sev-HIGH{background:rgba(255,209,102,.1);color:var(--accent3)}
+.sev-MEDIUM{background:rgba(77,166,255,.1);color:var(--accent4)}
+.sev-LOW{background:rgba(99,255,180,.08);color:var(--accent)}
+
+/* Chain mappings */
+.chains-title{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text)}
+.chain-map{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent2);padding:16px 20px;margin-bottom:3px;animation:fadeUp .3s ease both}
+.cm-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.cm-title{flex:1;font-size:14px;font-weight:600}
+.cm-score{font-family:var(--font-mono);font-size:11px;color:var(--accent2);font-weight:700}
+.cm-techniques{display:flex;gap:6px;flex-wrap:wrap}
+.cm-tech{font-family:var(--font-mono);font-size:9px;padding:3px 9px;border:1px solid var(--border);color:var(--muted);transition:all .2s}
+.cm-tech:hover{border-color:var(--accent4);color:var(--accent4)}
+.cm-tech-tactic{font-size:8px;color:var(--muted2);margin-top:1px}
+
+/* summary text */
+.summary-text{font-family:var(--font-mono);font-size:11px;color:var(--muted);line-height:1.65;margin-bottom:20px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent)}
+
+/* empty/loading */
+.empty-state{padding:60px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px}
+.empty-icon{font-size:36px;opacity:.1}
+.empty-title{font-size:18px;font-weight:700;color:var(--muted)}
+.empty-sub{font-family:var(--font-mono);font-size:11px;color:var(--muted2);max-width:320px;line-height:1.65}
+.spinner{width:20px;height:20px;border:2px solid rgba(99,255,180,.15);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--surface);border:1px solid var(--border);padding:12px 18px;font-family:var(--font-mono);font-size:11px;color:var(--text);transform:translateY(50px);opacity:0;transition:all .3s}
+.toast.show{transform:translateY(0);opacity:1}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--muted2)}
+</style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="grid-bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<nav>
+  <div class="nav-logo">
+    <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+      <path d="M14 2L3 7.5V16C3 21 7.8 25.5 14 27C20.2 25.5 25 21 25 16V7.5L14 2Z" stroke="#63ffb4" stroke-width="1.5" fill="none"/>
+      <path d="M10 14l3 3L18 11" stroke="#63ffb4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="nav-wordmark">Xentinel<span>AI</span></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="nav-badge">ATT&CK MAP</div>
+    <a href="/" class="btn-back">← Dashboard</a>
+  </div>
+</nav>
+
+<div class="layout">
+  <div class="sec-header">
+    <div class="sec-label">MITRE ATT&CK Framework</div>
+    <h2 class="sec-title">Attack <span class="outline">Technique Map.</span></h2>
+    <p class="sec-sub">Every finding mapped to MITRE ATT&CK — the universal language of adversary behaviour. Shows exactly which kill chain phases an attacker can exploit in your codebase.</p>
+  </div>
+
+  <div class="scan-selector">
+    <select class="scan-select" id="scan-select"><option value="">— Select a scan —</option></select>
+    <button class="btn-load" id="load-btn" onclick="loadMap()" disabled>Generate ATT&CK Map →</button>
+  </div>
+
+  <div class="outer" id="content">
+    <div class="empty-state">
+      <div class="empty-icon">🎯</div>
+      <div class="empty-title">No scan selected</div>
+      <div class="empty-sub">Select a scan to map findings against the MITRE ATT&CK Enterprise matrix.</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = window.XENTINEL_API || 'http://localhost:8000';
+
+// Cursor
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function tick(){rx+=(mx-rx)*.1;ry+=(my-ry)*.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(tick);})();
+
+async function loadScans(){
+  try{
+    const resp = await fetch(`${API}/scans?limit=50`);
+    if(!resp.ok) return;
+    const scans = await resp.json();
+    const sel = document.getElementById('scan-select');
+    scans.forEach(s=>{
+      const opt = document.createElement('option');
+      opt.value = s.scan_id;
+      const date = s.scanned_at.replace('T',' ').slice(0,16);
+      opt.textContent = `${s.repo}  ·  ${date}  ·  ${s.stats?.total||0} findings`;
+      sel.appendChild(opt);
+    });
+    if(scans.length > 0){
+      sel.value = scans[0].scan_id;
+      document.getElementById('load-btn').disabled = false;
+    }
+    sel.onchange = ()=>{document.getElementById('load-btn').disabled=!sel.value;};
+  }catch(e){ toast('Could not load scans','error'); }
+}
+
+async function loadMap(){
+  const scanId = document.getElementById('scan-select').value;
+  if(!scanId) return;
+  const content = document.getElementById('content');
+  content.innerHTML = `<div class="empty-state"><div class="spinner"></div><div class="empty-sub" style="margin-top:12px">Mapping to MITRE ATT&CK...</div></div>`;
+  try{
+    const resp = await fetch(`${API}/scan/${scanId}/attack-map`);
+    if(!resp.ok) throw new Error(await resp.text());
+    const data = await resp.json();
+    render(data);
+  }catch(e){
+    content.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-title">Failed</div><div class="empty-sub">${esc(String(e))}</div></div>`;
+  }
+}
+
+function render(data){
+  const cov = data.coverage || {};
+  const kc  = data.kill_chain || [];
+  const techs = data.techniques || [];
+  const chains = data.chain_mappings || [];
+
+  let html = '';
+
+  // Coverage stats
+  html += `<div class="coverage-bar">
+    <div class="cv-card"><div class="cv-val">${cov.techniques_total||0}</div><div class="cv-lbl">Techniques Detected</div></div>
+    <div class="cv-card"><div class="cv-val">${cov.tactics_detected||0}/${cov.tactics_total||13}</div><div class="cv-lbl">Tactics Covered</div></div>
+    <div class="cv-card"><div class="cv-val">${cov.pct||0}%</div><div class="cv-lbl">Kill Chain Coverage</div></div>
+    <div class="cv-card"><div class="cv-val">${chains.length}</div><div class="cv-lbl">Attack Chains Mapped</div></div>
+  </div>`;
+
+  // Summary
+  html += `<div class="summary-text">${esc(data.summary)}</div>`;
+
+  // Kill chain
+  html += `<div class="kill-chain-wrap"><div class="kc-title">Kill Chain Coverage</div><div class="kill-chain">`;
+  kc.forEach(phase=>{
+    html += `<div class="kc-phase${phase.detected?' detected':''}">
+      <div class="kc-dot"></div>
+      <div class="kc-name">${esc(phase.tactic_name)}</div>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  // Techniques
+  if(techs.length){
+    html += `<div class="techniques-title">${techs.length} Techniques Detected</div><div class="techniques-grid">`;
+    techs.forEach((t,i)=>{
+      const sevHtml = Object.entries(t.severities||{}).map(([s,c])=>
+        `<span class="sev-pip sev-${esc(s)}">${esc(s[0])}:${c}</span>`).join('');
+      html += `<div class="tech-card" style="animation-delay:${i*.04}s">
+        <div class="tc-header">
+          <div class="tc-id"><a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.technique_id)}</a></div>
+          <div class="tc-name">${esc(t.technique_name)}</div>
+          <div class="tc-tactic">${esc(t.tactic_name)}</div>
+        </div>
+        <div class="tc-summary">${esc(t.summary)}</div>
+        <div class="tc-footer">
+          <div class="tc-count">${t.finding_count} finding${t.finding_count!==1?'s':''}</div>
+          <div class="tc-sevs">${sevHtml}</div>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Attack chain mappings
+  if(chains.length){
+    html += `<div class="chains-title">Attack Chain → ATT&CK Mappings</div>`;
+    chains.forEach((c,i)=>{
+      const techHtml = (c.techniques||[]).map(t=>`
+        <div class="cm-tech">
+          <div>${esc(t.id)}</div>
+          <div class="cm-tech-tactic">${esc(t.tactic)}</div>
+        </div>`).join('');
+      html += `<div class="chain-map" style="animation-delay:${i*.08}s">
+        <div class="cm-header">
+          <div class="cm-title">${esc(c.chain_title)}</div>
+          <div class="cm-score">Risk ${c.risk_score}/100</div>
+        </div>
+        <div class="cm-techniques">${techHtml}</div>
+      </div>`;
+    });
+  }
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+let _tt;
+function toast(msg,type='info'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className=`toast ${type} show`;
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+loadScans();
+</script>
+</body>
+</html>

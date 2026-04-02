@@ -1,0 +1,655 @@
+{
+  "source": "NVD",
+  "count": 40,
+  "vulns": [
+    {
+      "cve_id": "CVE-2026-28775",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-04",
+      "description": "An unauthenticated Remote Code Execution (RCE) vulnerability exists in the SNMP service of International Datacasting Corporation (IDC) SFX Series SuperFlex SatelliteReceiver. The deployment insecurely provisions the `private` SNMP community string with read/write access by default. Because the SNMP agent runs as root, an unauthenticated remote attacker can utilize `NET-SNMP-EXTEND-MIB` directives,",
+      "cwes": [
+        "CWE-1188"
+      ],
+      "refs": [
+        "https://www.abdulmhsblog.com/posts/sfx2100-vulns/"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-28776",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-04",
+      "description": "International Datacasting Corporation (IDC) SFX Series SuperFlex SatelliteReceiver contains hardcoded credentials for the `monitor` account. A remote unauthenticated attacker can use these trivial, undocumented credentials to access the system via SSH. While initially dropped into a restricted shell, the attacker can trivially break out to achieve standard shell functionality.",
+      "cwes": [
+        "CWE-798"
+      ],
+      "refs": [
+        "https://www.abdulmhsblog.com/posts/sfx2100-vulns/"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-28777",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-04",
+      "description": "International Datacasting Corporation (IDC) \n\nSFX2100 Satellite Receiver, trivial password for the `user` (usr) account. A remote unauthenticated attacker can exploit this to gain unauthorized SSH access to the system, while intially dropped into a restricted shell, an attacker can trivially spawn a complete pty to gain an appropriately interactive shell.",
+      "cwes": [
+        "CWE-798"
+      ],
+      "refs": [
+        "https://www.abdulmhsblog.com/posts/sfx2100-vulns/"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-2628",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "The All-in-One Microsoft 365 & Entra ID / Azure AD SSO Login plugin for WordPress is vulnerable to authentication bypass in all versions up to, and including, 2.2.5. This makes it possible for unauthenticated attackers to bypass authentication and log in as other users, including administrators.",
+      "cwes": [
+        "CWE-288"
+      ],
+      "refs": [
+        "https://plugins.trac.wordpress.org/browser/login-with-azure?rev=3465063",
+        "https://www.wordfence.com/threat-intel/vulnerabilities/id/5e15e36e-55f9-4095-a0ba-48ef9434606a?source=cve"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-1492",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "The User Registration & Membership \u2013 Custom Registration Form Builder, Custom Login Form, User Profile, Content Restriction & Membership Plugin plugin for WordPress is vulnerable to improper privilege management in all versions up to, and including, 5.1.2. This is due to the plugin accepting a user-supplied role during membership registration without properly enforcing a server-side allowlist. Thi",
+      "cwes": [
+        "CWE-269"
+      ],
+      "refs": [
+        "https://plugins.trac.wordpress.org/changeset/3469042/user-registration",
+        "https://www.wordfence.com/threat-intel/vulnerabilities/id/7e9fec92-f471-4ce9-9138-1c58ad658da2?source=cve"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-3136",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "An improper authorization\u00a0vulnerability in GitHub Trigger Comment Control\u00a0in Google\u00a0Cloud Build\u00a0prior to 2026-1-26\u00a0allows a remote attacker\u00a0to execute arbitrary code in the build environment.\n\nThis vulnerability was patched on 26 January 2026, and no customer action is needed.",
+      "cwes": [
+        "CWE-863"
+      ],
+      "refs": [
+        "https://docs.cloud.google.com/build/docs/release-notes#March_03_2026"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2024-55024",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "An authentication bypass vulnerability in the authorization mechanism of Weintek cMT-3072XH2 easyweb v2.1.53, OS v20231011 allows unauthorized attackers to perform Administrative actions using service accounts.",
+      "cwes": [
+        "CWE-693"
+      ],
+      "refs": [
+        "https://gist.github.com/AenganZ/f86ed0da28825a1432ec697f484622de",
+        "https://plain-trick-71d.notion.site/weintek-cMT-3072XH2-14687a89c4c181eeb21ad61e0392f34b?pvs=4"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2024-55026",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "An issue in the reset_pj.cgi endpoint of Weintek cMT-3072XH2 easyweb v2.1.53, OS v20231011 allows unauthorized attackers to execute arbitrary commands via supplying a crafted GET request.",
+      "cwes": [
+        "CWE-256"
+      ],
+      "refs": [
+        "https://gist.github.com/AenganZ/f86ed0da28825a1432ec697f484622de",
+        "https://plain-trick-71d.notion.site/weintek-cMT-3072XH2-14687a89c4c181eeb21ad61e0392f34b?pvs=4"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-14923",
+      "severity": "CRITICAL",
+      "score": 4.7,
+      "vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:H/I:N/A:N",
+      "published": "2026-03-03",
+      "description": "IBM WebSphere Application Server - Liberty 17.0.0.3 through 26.0.0.2 IBM WebSphere Application Server Liberty could provide weaker than expected security when using the Security Utility when administering security settings.",
+      "cwes": [
+        "CWE-321",
+        "CWE-798"
+      ],
+      "refs": [
+        "https://www.ibm.com/support/pages/node/7261761"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-70236",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "Stack buffer overflow vulnerability in D-Link DIR-513 v1.10 via the curTime parameter to goform/formSetDomainFilter.",
+      "cwes": [
+        "CWE-787",
+        "CWE-121"
+      ],
+      "refs": [
+        "https://github.com/akuma-QAQ/CVEreport/tree/main/D-link/CVE-2025-70236",
+        "https://www.dlink.com.cn/techsupport/ProductInfo.aspx?m=DIR-513",
+        "https://www.dlink.com/en/security-bulletin/"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-70237",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "Stack buffer overflow vulnerability in D-Link DIR-513 v1.10 via the curTime parameter to goform/formSetPortTr.",
+      "cwes": [
+        "CWE-787",
+        "CWE-121"
+      ],
+      "refs": [
+        "https://github.com/akuma-QAQ/CVEreport/tree/main/D-link/CVE-2025-70237",
+        "https://www.dlink.com.cn/techsupport/ProductInfo.aspx?m=DIR-513",
+        "https://www.dlink.com/en/security-bulletin/"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-70241",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "Stack buffer overflow vulnerability in D-Link DIR-513 v1.10 via the curTime parameter to goform/formSetWANType_Wizard5.",
+      "cwes": [
+        "CWE-787",
+        "CWE-121"
+      ],
+      "refs": [
+        "https://github.com/akuma-QAQ/CVEreport/tree/main/D-link/CVE-2025-70241",
+        "https://www.dlink.com.cn/techsupport/ProductInfo.aspx?m=DIR-513",
+        "https://www.dlink.com/en/security-bulletin/"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-70234",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "Stack buffer overflow vulnerability in D-Link DIR-513 v1.10 via the curTime parameter to goform/formSetQoS.",
+      "cwes": [
+        "CWE-787",
+        "CWE-121"
+      ],
+      "refs": [
+        "https://github.com/akuma-QAQ/CVEreport/tree/main/D-link/CVE-2025-70234",
+        "https://www.dlink.com.cn/techsupport/ProductInfo.aspx?m=DIR-513",
+        "https://www.dlink.com/en/security-bulletin/"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-70239",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "Stack buffer overflow vulnerability in D-Link DIR-513 v1.10 via the curTime parameter to goform/formSetWAN_Wizard55.",
+      "cwes": [
+        "CWE-787",
+        "CWE-121"
+      ],
+      "refs": [
+        "https://github.com/akuma-QAQ/CVEreport/tree/main/D-link/CVE-2025-70239",
+        "https://www.dlink.com.cn/techsupport/ProductInfo.aspx?m=DIR-513",
+        "https://www.dlink.com/en/security-bulletin/"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-70240",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "Stack buffer overflow vulnerability in D-Link DIR-513 v1.10 via the curTime parameter to goform/formSetWAN_Wizard51.",
+      "cwes": [
+        "CWE-787",
+        "CWE-121"
+      ],
+      "refs": [
+        "https://github.com/akuma-QAQ/CVEreport/tree/main/D-link/CVE-2025-70240",
+        "https://www.dlink.com.cn/techsupport/ProductInfo.aspx?m=DIR-513",
+        "https://www.dlink.com/en/security-bulletin/"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-3485",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "A flaw has been found in D-Link DIR-868L 110b03. This affects the function sub_1BF84 of the component SSDP Service. This manipulation of the argument ST causes os command injection. It is possible to initiate the attack remotely. The exploit has been published and may be used. This vulnerability only affects products that are no longer supported by the maintainer.",
+      "cwes": [
+        "CWE-77",
+        "CWE-78",
+        "CWE-78"
+      ],
+      "refs": [
+        "https://kn0sinna.notion.site/dlink-dir-868l-ssdp-command-injection-30eb1876cd6e80caa691de6fe5cab59c",
+        "https://vuldb.com/?ctiid.348560",
+        "https://vuldb.com/?id.348560"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-24848",
+      "severity": "CRITICAL",
+      "score": 9.9,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "OpenEMR is a free and open source electronic health records and medical practice management application. In 7.0.4 and earlier, the disposeDocument() method in EtherFaxActions.php allows authenticated users to write arbitrary content to arbitrary locations on the server filesystem. This vulnerability can be exploited to achieve Remote Code Execution (RCE) by uploading malicious PHP web shells.",
+      "cwes": [
+        "CWE-22"
+      ],
+      "refs": [
+        "https://github.com/openemr/openemr/security/advisories/GHSA-5vp5-4rm6-h4c9"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-24898",
+      "severity": "CRITICAL",
+      "score": 10.0,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "OpenEMR is a free and open source electronic health records and medical practice management application. Prior to 8.0.0, an unauthenticated token disclosure vulnerability in the MedEx callback endpoint allows any unauthenticated visitor to obtain the practice's MedEx API tokens, leading to complete third-party service compromise, PHI exfiltration, unauthorized actions on the MedEx platform, and HI",
+      "cwes": [
+        "CWE-287"
+      ],
+      "refs": [
+        "https://github.com/openemr/openemr/commit/8e4de59ab58222f13abc4e4040128737d857db9c",
+        "https://github.com/openemr/openemr/security/advisories/GHSA-qwff-3mw7-7rc7"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-27971",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "Qwik is a performance focused javascript framework. qwik <=1.19.0 is vulnerable to RCE due to an unsafe deserialization vulnerability in the server$ RPC mechanism that allows any unauthenticated user to execute arbitrary code on the server with a single HTTP request. Affects any deployment where require() is available at runtime. This vulnerability is fixed in 1.19.1.",
+      "cwes": [
+        "CWE-502"
+      ],
+      "refs": [
+        "https://github.com/QwikDev/qwik/security/advisories/GHSA-p9x5-jp3h-96mm"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-3266",
+      "severity": "CRITICAL",
+      "score": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "Missing Authorization vulnerability in OpenText\u2122 Filr allows Authentication Bypass.\u00a0The vulnerability could allow unauthenticated users to get XSRF token and do RPC with carefully crafted programs.\n\nThis issue affects Filr: through 25.1.2.",
+      "cwes": [
+        "CWE-862"
+      ],
+      "refs": [
+        "https://portal.microfocus.com/s/article/KM000045579?language=en_US"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-1566",
+      "severity": "HIGH",
+      "score": 8.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "The LatePoint \u2013 Calendar Booking Plugin for Appointments and Events plugin for WordPress is vulnerable to privilege escalation via password reset in all versions up to, and including, 5.2.7. This is due to the plugin allowing users with a LatePoint Agent role, who are creating new customers to set the 'wordpress_user_id' field. This makes it possible for authenticated attackers, with Agent-level a",
+      "cwes": [
+        "CWE-269"
+      ],
+      "refs": [
+        "https://plugins.trac.wordpress.org/changeset/3463945/",
+        "https://www.wordfence.com/threat-intel/vulnerabilities/id/c958880e-6068-4e7d-a780-1251f3ab9bf7?source=cve"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-2269",
+      "severity": "HIGH",
+      "score": 7.2,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "The Uncanny Automator \u2013 Easy Automation, Integration, Webhooks & Workflow Builder Plugin plugin for WordPress is vulnerable to Server-Side Request Forgery in all versions up to, and including, 7.0.0.3 via the download_url() function. This makes it possible for authenticated attackers, with Administrator-level access and above, to make web requests to arbitrary locations originating from the web ap",
+      "cwes": [
+        "CWE-434"
+      ],
+      "refs": [
+        "https://plugins.trac.wordpress.org/changeset/3471238/",
+        "https://www.wordfence.com/threat-intel/vulnerabilities/id/80848de3-a772-4078-aa04-29e1d6e3ff73?source=cve"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-2448",
+      "severity": "HIGH",
+      "score": 8.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "The Page Builder by SiteOrigin plugin for WordPress is vulnerable to Local File Inclusion in all versions up to, and including, 2.33.5 via the locate_template() function. This makes it possible for authenticated attackers, with Contributor-level access and above, to include and execute arbitrary files on the server, allowing the execution of any PHP code in those files. This can be used to bypass ",
+      "cwes": [
+        "CWE-22"
+      ],
+      "refs": [
+        "https://plugins.trac.wordpress.org/browser/siteorigin-panels/tags/2.33.5/inc/widgets/post-loop.php#L576",
+        "https://www.wordfence.com/threat-intel/vulnerabilities/id/deeeb78d-1757-44ec-968b-968d919b84f1?source=cve"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-12345",
+      "severity": "HIGH",
+      "score": 8.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "A security vulnerability has been detected in LLM-Claw 0.1.0/0.1.1/0.1.1a/0.1.1a-p1. The affected element is the function agent_deploy_init of the file /agents/deploy/initiate.c of the component Agent Deployment. Such manipulation leads to buffer overflow. It is possible to launch the attack remotely. A patch should be applied to remediate this issue.",
+      "cwes": [
+        "CWE-119",
+        "CWE-120"
+      ],
+      "refs": [
+        "https://vuldb.com/?ctiid.348531",
+        "https://vuldb.com/?id.348531"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-15595",
+      "severity": "HIGH",
+      "score": 7.8,
+      "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "Privilege escalation via dll hijacking in Inno Setup 6.2.1 and ealier versions.",
+      "cwes": [
+        "CWE-1390"
+      ],
+      "refs": [
+        "https://jrsoftware.org/files/is6.2-whatsnew.htm"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-2568",
+      "severity": "HIGH",
+      "score": 7.2,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N",
+      "published": "2026-03-03",
+      "description": "The WP Zendesk for Contact Form 7, WPForms, Elementor, Formidable and Ninja Forms plugin for WordPress is vulnerable to Stored Cross-Site Scripting via form submission data in all versions up to, and including, 1.1.5 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a ",
+      "cwes": [
+        "CWE-79"
+      ],
+      "refs": [
+        "https://plugins.trac.wordpress.org/changeset/3467904/",
+        "https://www.wordfence.com/threat-intel/vulnerabilities/id/27d26d1c-d027-4a22-af49-4d7684d36d40?source=cve"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-3463",
+      "severity": "HIGH",
+      "score": 3.3,
+      "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L",
+      "published": "2026-03-03",
+      "description": "A weakness has been identified in xlnt-community xlnt up to 1.6.1. Impacted is the function xlnt::detail::binary_writer::append of the file source/detail/binary.hpp of the component Compound Document Parser. This manipulation causes heap-based buffer overflow. The attack can only be executed locally. The exploit has been made available to the public and could be used for attacks. Patch name: 147. ",
+      "cwes": [
+        "CWE-119",
+        "CWE-122"
+      ],
+      "refs": [
+        "https://github.com/oneafter/0128/blob/main/xl2/repro",
+        "https://github.com/xlnt-community/xlnt/",
+        "https://github.com/xlnt-community/xlnt/issues/138"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-3342",
+      "severity": "HIGH",
+      "score": 7.2,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "An Out-of-bounds Write vulnerability in WatchGuard Fireware OS may allow an authenticated privileged administrator to execute arbitrary code with root permissions via an exposed management interface.\n\nThis vulnerability affects Fireware OS 11.9 up to and including 11.12.4_Update1, 12.0 up to and including 12.11.7 and 2025.1 up to and including 2026.1.1.",
+      "cwes": [
+        "CWE-787"
+      ],
+      "refs": [
+        "https://www.watchguard.com/wgrd-psirt/advisory/wgsa-2026-00003"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-64736",
+      "severity": "HIGH",
+      "score": 6.1,
+      "vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:L",
+      "published": "2026-03-03",
+      "description": "An out-of-bounds read vulnerability exists in the ABF parsing functionality of The Biosig Project libbiosig 3.9.2 and Master Branch (5462afb0). A specially crafted .abf file can lead to an information leak. An attacker can provide a malicious file to trigger this vulnerability.",
+      "cwes": [
+        "CWE-125"
+      ],
+      "refs": [
+        "https://talosintelligence.com/vulnerability_reports/TALOS-2025-2323",
+        "https://www.talosintelligence.com/vulnerability_reports/TALOS-2025-2323"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-62817",
+      "severity": "HIGH",
+      "score": 7.5,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "published": "2026-03-03",
+      "description": "An issue was discovered in Samsung Mobile Processor Exynos 1280, 2200, 1380, 1480, 2400, 1580, and 2500. A NULL pointer dereference of session->ncp_hdr_buf in __pilot_parsing_ncp() causes a denial of service.",
+      "cwes": [
+        "CWE-476",
+        "CWE-476"
+      ],
+      "refs": [
+        "https://semiconductor.samsung.com/support/quality-support/product-security-updates/",
+        "https://semiconductor.samsung.com/support/quality-support/product-security-updates/cve-2025-62817/"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2023-31044",
+      "severity": "HIGH",
+      "score": 2.0,
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:H/UI:R/S:U/C:L/I:N/A:N",
+      "published": "2026-03-03",
+      "description": "An issue was discovered in Nokia Impact before Mobile 23_FP1. In Impact DM 19.11 onwards, a remote authenticated user, using the Add Campaign functionality, can inject a malicious payload within the Campaign Name. This data can be exported to a CSV file. Attackers can populate data fields that may attempt data exfiltration or other malicious activity when automatically executed by the spreadsheet ",
+      "cwes": [
+        "CWE-94"
+      ],
+      "refs": [
+        "https://nokia.com",
+        "https://www.gruppotim.it/it/footer/red-team/2023/Motive-Impact-CVE-2023-31044.html"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-63909",
+      "severity": "HIGH",
+      "score": 7.2,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "Incorrect access control in the component /opt/SRLtzm/bin/TapeDumper of Cohesity TranZman Migration Appliance Release 4.0 Build 14614 allows attackers to escalate privileges to root and read and write arbitrary files.",
+      "cwes": [
+        "CWE-269"
+      ],
+      "refs": [
+        "https://gist.github.com/GregDurys/d402038147e36de5908159d9722072ef",
+        "https://github.com/GregDurys/Cohesity-TranZman-CVEs"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-63912",
+      "severity": "HIGH",
+      "score": 7.5,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "published": "2026-03-03",
+      "description": "Cohesity TranZman Migration Appliance Release 4.0 Build 14614 was discovered to use a weak cryptography algorithm for data encryption, allowing attackers to trivially reverse the encyption and expose credentials.",
+      "cwes": [
+        "CWE-327"
+      ],
+      "refs": [
+        "https://gist.github.com/GregDurys/4c2765d76272cda64dfc78f7a75a9251",
+        "https://github.com/GregDurys/Cohesity-TranZman-CVEs"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-3437",
+      "severity": "HIGH",
+      "score": 7.8,
+      "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "An Improper Restriction of Operations within the Bounds of a Memory Buffer vulnerability in Portwell Engineering Toolkits version 4.8.2 could allow a local authenticated attacker to read and write to arbitrary memory via the Portwell Engineering Toolkits driver. Successful exploitation of this vulnerability could result in escalation of privileges or cause a denial-of-service condition.",
+      "cwes": [
+        "CWE-119"
+      ],
+      "refs": [
+        "https://www.cisa.gov/news-events/ics-advisories/icsa-26-062-04"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2024-55019",
+      "severity": "HIGH",
+      "score": 7.5,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "published": "2026-03-03",
+      "description": "Incorrect access control in the component download_wb.cgi of Weintek cMT-3072XH2 easyweb Web Version v2.1.53, OS v20231011 allows unauthenticated attack to download arbitrary files.",
+      "cwes": [
+        "CWE-284"
+      ],
+      "refs": [
+        "https://gist.github.com/AenganZ/f86ed0da28825a1432ec697f484622de",
+        "https://plain-trick-71d.notion.site/weintek-cMT-3072XH2-14687a89c4c181eeb21ad61e0392f34b?pvs=4"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2024-55021",
+      "severity": "HIGH",
+      "score": 7.5,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "published": "2026-03-03",
+      "description": "Weintek cMT-3072XH2 easyweb v2.1.53, OS v20231011 was discovered to contain a hardcoded password in the FTP protocol.",
+      "cwes": [
+        "CWE-798",
+        "CWE-78"
+      ],
+      "refs": [
+        "https://gist.github.com/AenganZ/f86ed0da28825a1432ec697f484622de",
+        "https://plain-trick-71d.notion.site/weintek-cMT-3072XH2-14687a89c4c181eeb21ad61e0392f34b?pvs=4"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-13616",
+      "severity": "HIGH",
+      "score": 6.5,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+      "published": "2026-03-03",
+      "description": "IBM DataStage on Cloud Pak for Data 5.1.2 through 5.3.0 returns sensitive information in an HTTP response that could be used in further attacks against the system.",
+      "cwes": [
+        "CWE-497"
+      ],
+      "refs": [
+        "https://www.ibm.com/support/pages/node/7261771"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-14604",
+      "severity": "HIGH",
+      "score": 6.6,
+      "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:N",
+      "published": "2026-03-03",
+      "description": "IBM Storage Scale IBM S through rage Scale 5.2.3.0 - 5.2.3.5, and IBM S through rage Scale 6.0.0.0 - 6.0.0.1 could allow a local user to unintentionally trigger additional permissions for resources in a way that allows that resource to be executed by unintended actors.",
+      "cwes": [
+        "CWE-732"
+      ],
+      "refs": [
+        "https://www.ibm.com/support/pages/node/7262312"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2025-36363",
+      "severity": "HIGH",
+      "score": 5.9,
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "published": "2026-03-03",
+      "description": "IBM DevOps Plan 3.0.0 through 3.0.5 uses an inadequate account lockout setting that could allow a remote attacker to brute force account credentials.",
+      "cwes": [
+        "CWE-307"
+      ],
+      "refs": [
+        "https://www.ibm.com/support/pages/node/7261934"
+      ],
+      "kev": false
+    },
+    {
+      "cve_id": "CVE-2026-0869",
+      "severity": "HIGH",
+      "score": 8.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+      "published": "2026-03-03",
+      "description": "Authentication bypass in Brocade ASCG 3.4.0 Could allow an unauthorized user to perform ASCG operations related to Brocade Support Link(BSL) and streaming configuration. and could even disable the ASCG application or disable use of BSL data collection on Brocade switches within the fabric.",
+      "cwes": [
+        "CWE-305"
+      ],
+      "refs": [
+        "https://support.broadcom.com/external/content/SecurityAdvisories/0/37121"
+      ],
+      "kev": false
+    }
+  ],
+  "fetched_at": "2026-04-01T21:16:20.768849+00:00",
+  "cached_at": 1775096684.641666,
+  "cached_at_iso": "2026-04-02T02:24:44.641667+00:00"
+}

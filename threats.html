@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<title>XentinelAI — Threat Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#050608;--bg2:#080b10;--surface:#0d1117;--surface2:#111820;
+  --border:rgba(255,255,255,0.07);--border-bright:rgba(99,255,180,0.25);
+  --accent:#63ffb4;--accent2:#ff4d6d;--accent3:#ffd166;--accent4:#4da6ff;
+  --text:#e8edf5;--muted:#a9acb0;--muted2:#555f72;
+  --font-display:'Syne',sans-serif;--font-mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);min-height:100vh;overflow-x:hidden;cursor:none}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9000;opacity:.4}
+.grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(99,255,180,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(99,255,180,.03) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black,transparent)}
+.orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0}
+.orb-1{width:600px;height:600px;background:radial-gradient(circle,rgba(255,77,109,.06),transparent 70%);top:-200px;right:-100px;animation:float1 9s ease-in-out infinite}
+.orb-2{width:400px;height:400px;background:radial-gradient(circle,rgba(99,255,180,.04),transparent 70%);bottom:0;left:-100px;animation:float2 11s ease-in-out infinite}
+@keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,40px)}}
+@keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-30px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+.cursor{position:fixed;width:10px;height:10px;background:var(--accent);border-radius:50%;pointer-events:none;z-index:9999;mix-blend-mode:screen;transform:translate(-50%,-50%)}
+.cursor-ring{position:fixed;width:34px;height:34px;border:1px solid rgba(99,255,180,.4);border-radius:50%;pointer-events:none;z-index:9998;transition:width .2s,height .2s;transform:translate(-50%,-50%)}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:500;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(5,6,8,.97),transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-wordmark{font-family:var(--font-display);font-weight:800;font-size:17px;letter-spacing:-.02em}
+.nav-wordmark span{color:var(--accent)}
+.nav-right{display:flex;align-items:center;gap:14px}
+.nav-badge{font-family:var(--font-mono);font-size:10px;color:var(--accent2);border:1px solid rgba(255,77,109,.3);padding:4px 10px;letter-spacing:.08em;animation:pulse 2s infinite}
+.nav-status{font-family:var(--font-mono);font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+.btn-back{font-family:var(--font-mono);font-size:11px;color:var(--muted);background:transparent;border:1px solid var(--border);padding:7px 14px;cursor:none;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn-back:hover{border-color:var(--accent);color:var(--accent)}
+
+.layout{padding-top:57px;min-height:100vh;position:relative;z-index:1}
+
+/* hero */
+.hero{padding:36px 48px 24px;border-bottom:1px solid var(--border)}
+.hero-label{font-family:var(--font-mono);font-size:10px;color:var(--accent2);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.hero-label::after{content:'';flex:1;max-width:50px;height:1px;background:rgba(255,77,109,.3)}
+.hero-title{font-size:clamp(28px,4vw,48px);font-weight:800;letter-spacing:-.03em;line-height:1.05;margin-bottom:6px}
+.hero-title .outline{color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.5)}
+.hero-sub{font-family:var(--font-mono);font-size:12px;color:var(--muted);line-height:1.6;max-width:560px}
+.hero-actions{display:flex;gap:10px;margin-top:16px;align-items:center}
+.btn-refresh{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:8px 18px;background:var(--accent2);color:white;border:none;cursor:none;transition:all .2s;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)}
+.btn-refresh:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(255,77,109,.25)}
+.btn-refresh:disabled{background:var(--muted2);clip-path:none;cursor:not-allowed}
+.last-updated{font-family:var(--font-mono);font-size:10px;color:var(--muted2)}
+
+/* tabs */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:57px;z-index:100}
+.tab{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:13px 28px;color:var(--muted);cursor:none;border-bottom:2px solid transparent;transition:all .2s;display:flex;align-items:center;gap:8px}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(99,255,180,.03)}
+.tab-count{font-size:9px;padding:2px 6px;border-radius:10px;font-weight:700}
+.tab-count.crit{background:rgba(255,77,109,.2);color:var(--accent2)}
+.tab-count.warn{background:rgba(255,209,102,.15);color:var(--accent3)}
+.panel{display:none;animation:fadeIn .3s ease}.panel.active{display:block}
+
+/* summary bar */
+.summary-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+.sb-card{background:var(--surface);padding:18px 22px;position:relative;overflow:hidden}
+.sb-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sb-critical::before{background:var(--accent2)}
+.sb-high::before{background:var(--accent3)}
+.sb-kev::before{background:#ff6b00}
+.sb-total::before{background:var(--muted2)}
+.sb-val{font-size:30px;font-weight:800;letter-spacing:-.04em;line-height:1;margin-bottom:4px}
+.sb-critical .sb-val{color:var(--accent2)}
+.sb-high     .sb-val{color:var(--accent3)}
+.sb-kev      .sb-val{color:#ff6b00}
+.sb-total    .sb-val{color:var(--text)}
+.sb-lbl{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+
+/* CVE list */
+.cve-outer{padding:20px 48px}
+.cve-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.filter-btn{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:none;transition:all .2s}
+.filter-btn:hover{border-color:rgba(255,255,255,.15);color:var(--text)}
+.filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(99,255,180,.05)}
+.filter-btn.active.f-critical{border-color:var(--accent2);color:var(--accent2);background:rgba(255,77,109,.06)}
+.filter-btn.active.f-high{border-color:var(--accent3);color:var(--accent3);background:rgba(255,209,102,.05)}
+.filter-btn.active.f-kev{border-color:#ff6b00;color:#ff6b00;background:rgba(255,107,0,.06)}
+.search-input{margin-left:auto;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:11px;padding:6px 14px;outline:none;width:220px;transition:border-color .2s}
+.search-input:focus{border-color:var(--accent)}
+.search-input::placeholder{color:var(--muted2)}
+
+.cve-list{display:flex;flex-direction:column;gap:2px}
+.cve-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--border);transition:all .2s;overflow:hidden;animation:fadeUp .3s ease both;cursor:none}
+.cve-card:hover{border-color:rgba(255,255,255,.1);transform:translateX(3px)}
+.cve-card.expanded{border-color:var(--border-bright)}
+.cve-card.sev-CRITICAL{border-left-color:var(--accent2)}
+.cve-card.sev-HIGH{border-left-color:var(--accent3)}
+.cve-card.is-kev{border-left-color:#ff6b00}
+.cve-header{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:none}
+.cve-id{font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--accent4);flex-shrink:0;min-width:130px}
+.cve-id a{color:inherit;text-decoration:none}
+.cve-id a:hover{text-decoration:underline}
+.sev-badge{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.1em;padding:2px 8px;flex-shrink:0}
+.sev-badge.CRITICAL{background:rgba(255,77,109,.15);color:var(--accent2);border:1px solid rgba(255,77,109,.25)}
+.sev-badge.HIGH{background:rgba(255,209,102,.1);color:var(--accent3);border:1px solid rgba(255,209,102,.2)}
+.kev-badge{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.08em;padding:2px 8px;background:rgba(255,107,0,.15);color:#ff6b00;border:1px solid rgba(255,107,0,.25);flex-shrink:0}
+.score-badge{font-family:var(--font-mono);font-size:10px;font-weight:700;flex-shrink:0;min-width:36px;text-align:center}
+.score-badge.score-critical{color:var(--accent2)}
+.score-badge.score-high{color:var(--accent3)}
+.cve-desc{flex:1;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cve-date{font-family:var(--font-mono);font-size:10px;color:var(--muted2);flex-shrink:0}
+.cve-toggle{font-family:var(--font-mono);font-size:16px;color:var(--muted);transition:transform .25s;flex-shrink:0}
+.cve-card.expanded .cve-toggle{transform:rotate(45deg);color:var(--accent)}
+.cve-body{display:none;padding:0 16px 14px;border-top:1px solid var(--border)}
+.cve-card.expanded .cve-body{display:block}
+.cve-full-desc{font-family:var(--font-mono);font-size:12px;color:var(--muted);line-height:1.65;margin:12px 0 8px}
+.cve-meta-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+.cve-meta-item{font-family:var(--font-mono);font-size:10px;color:var(--muted2)}
+.cve-meta-item span{color:var(--text)}
+.cwe-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.cwe-tag{font-family:var(--font-mono);font-size:9px;padding:2px 8px;background:rgba(77,166,255,.1);color:var(--accent4);border:1px solid rgba(77,166,255,.2)}
+.cve-refs{display:flex;gap:8px;flex-wrap:wrap}
+.cve-ref{font-family:var(--font-mono);font-size:10px;color:var(--accent);text-decoration:none;border:1px solid var(--border);padding:3px 10px;transition:all .2s}
+.cve-ref:hover{border-color:var(--accent);background:rgba(99,255,180,.05)}
+.kev-action{background:rgba(255,107,0,.06);border:1px solid rgba(255,107,0,.2);padding:10px 14px;font-family:var(--font-mono);font-size:11px;color:#ff6b00;margin-top:8px;line-height:1.6}
+.kev-action::before{content:'⚠ CISA Required Action: ';color:var(--muted2)}
+
+/* KEV tab */
+.kev-outer{padding:20px 48px}
+.kev-intro{background:rgba(255,107,0,.05);border:1px solid rgba(255,107,0,.2);border-left:3px solid #ff6b00;padding:14px 18px;margin-bottom:20px;font-family:var(--font-mono);font-size:11px;color:var(--muted);line-height:1.65}
+.kev-intro strong{color:#ff6b00;display:block;margin-bottom:4px;font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+.kev-list{display:flex;flex-direction:column;gap:2px}
+.kev-item{background:var(--surface);border:1px solid var(--border);border-left:3px solid #ff6b00;padding:14px 18px;animation:fadeUp .3s ease both;transition:border-color .2s;cursor:none}
+.kev-item:hover{border-color:rgba(255,107,0,.3)}
+.ki-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:8px}
+.ki-cve{font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--accent4);flex-shrink:0}
+.ki-product{flex:1;min-width:0}
+.ki-vendor{font-size:13px;font-weight:600}
+.ki-name{font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:2px}
+.ki-date{font-family:var(--font-mono);font-size:10px;color:#ff6b00;flex-shrink:0;text-align:right}
+.ki-due{font-family:var(--font-mono);font-size:9px;color:var(--muted2)}
+.ki-desc{font-family:var(--font-mono);font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:6px}
+.ki-action{font-family:var(--font-mono);font-size:10px;color:#ff6b00;border-top:1px solid var(--border);padding-top:6px;margin-top:6px;line-height:1.6}
+.ki-action::before{content:'Required: ';color:var(--muted2)}
+
+/* loading/empty */
+.loading-state{padding:60px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}
+.spinner{width:24px;height:24px;border:2px solid rgba(99,255,180,.15);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+.loading-text{font-family:var(--font-mono);font-size:12px;color:var(--muted);letter-spacing:.08em}
+.empty-state{padding:60px;text-align:center}
+.empty-icon{font-size:36px;opacity:.1;margin-bottom:12px}
+.empty-title{font-size:18px;font-weight:700;color:var(--muted);margin-bottom:6px}
+.empty-sub{font-family:var(--font-mono);font-size:11px;color:var(--muted2);max-width:340px;margin:0 auto;line-height:1.65}
+
+/* toast */
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--surface);border:1px solid var(--border);padding:12px 18px;font-family:var(--font-mono);font-size:11px;color:var(--text);transform:translateY(50px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:10px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast::before{content:'';width:2px;align-self:stretch;flex-shrink:0}
+.toast.success::before{background:var(--accent)}.toast.error::before{background:var(--accent2)}.toast.info::before{background:var(--accent4)}
+
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--muted2)}
+</style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="grid-bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<nav>
+  <div class="nav-logo">
+    <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+      <path d="M14 2L3 7.5V16C3 21 7.8 25.5 14 27C20.2 25.5 25 21 25 16V7.5L14 2Z" stroke="#63ffb4" stroke-width="1.5" fill="none"/>
+      <path d="M10 14l3 3L18 11" stroke="#63ffb4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="nav-wordmark">Xentinel<span>AI</span></div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-badge">LIVE THREAT FEED</div>
+    <div class="nav-status"><div class="status-dot"></div><span id="feedStatus">Loading...</span></div>
+    <a href="/" class="btn-back">← Dashboard</a>
+  </div>
+</nav>
+
+<div class="layout">
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-label">Threat Intelligence</div>
+    <h1 class="hero-title">Latest <span class="outline">Threats.</span></h1>
+    <p class="hero-sub">Real-time CVE feed from NVD · CISA KEV overlay for actively exploited vulnerabilities · Refreshed every 6 hours.</p>
+    <div class="hero-actions">
+      <button class="btn-refresh" id="refreshBtn" onclick="refreshFeed()">↺ Refresh Now</button>
+      <div class="last-updated" id="lastUpdated">—</div>
+    </div>
+  </div>
+
+  <!-- Summary bar -->
+  <div class="summary-bar" id="summaryBar">
+    <div class="sb-card sb-critical"><div class="sb-val" id="sb-critical">—</div><div class="sb-lbl">Critical CVEs (30d)</div></div>
+    <div class="sb-card sb-high"><div class="sb-val" id="sb-high">—</div><div class="sb-lbl">High CVEs (30d)</div></div>
+    <div class="sb-card sb-kev"><div class="sb-val" id="sb-kev">—</div><div class="sb-lbl">Actively Exploited</div></div>
+    <div class="sb-card sb-total"><div class="sb-val" id="sb-total-kev">—</div><div class="sb-lbl">Total CISA KEV</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('nvd')">
+      📡 NVD Feed
+      <span class="tab-count crit" id="tab-count-nvd">—</span>
+    </div>
+    <div class="tab" onclick="switchTab('kev')">
+      🚨 CISA KEV
+      <span class="tab-count warn" id="tab-count-kev">—</span>
+    </div>
+  </div>
+
+  <!-- NVD Panel -->
+  <div class="panel active" id="panel-nvd">
+    <div class="cve-outer">
+      <div class="cve-filters">
+        <button class="filter-btn active" onclick="setFilter(this,'ALL')">All</button>
+        <button class="filter-btn f-critical" onclick="setFilter(this,'CRITICAL')">Critical</button>
+        <button class="filter-btn f-high" onclick="setFilter(this,'HIGH')">High</button>
+        <button class="filter-btn f-kev" onclick="setFilter(this,'KEV')">⚠ Actively Exploited</button>
+        <input class="search-input" id="cve-search" placeholder="Search CVE, keyword..." oninput="renderNVD()"/>
+      </div>
+      <div class="cve-list" id="cve-list">
+        <div class="loading-state"><div class="spinner"></div><div class="loading-text">Fetching threat data...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEV Panel -->
+  <div class="panel" id="panel-kev">
+    <div class="kev-outer">
+      <div class="kev-intro">
+        <strong>⚠ CISA Known Exploited Vulnerabilities</strong>
+        These vulnerabilities are confirmed to be actively exploited in the wild. CISA requires federal agencies to patch within the due date. If any of these affect your dependencies, treat them as P0.
+      </div>
+      <div class="kev-list" id="kev-list">
+        <div class="loading-state"><div class="spinner"></div><div class="loading-text">Loading KEV data...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = window.XENTINEL_API || 'http://localhost:8000';
+let nvdData  = null;
+let kevData  = null;
+let curFilter = 'ALL';
+
+// ── Cursor ──────────────────────────────────────────────────────────────────
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function tick(){rx+=(mx-rx)*.1;ry+=(my-ry)*.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(tick);})();
+
+// ── Tab ──────────────────────────────────────────────────────────────────────
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['nvd','kev'][i]===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+}
+
+// ── Load data ────────────────────────────────────────────────────────────────
+async function loadThreats(){
+  try{
+    const [nvdResp, kevResp] = await Promise.all([
+      fetch(`${API}/threats/latest`),
+      fetch(`${API}/threats/kev`),
+    ]);
+
+    if(nvdResp.ok){
+      const data = await nvdResp.json();
+      nvdData = data.nvd || {};
+      document.getElementById('sb-critical').textContent =
+        (nvdData.vulns||[]).filter(v=>v.severity==='CRITICAL').length;
+      document.getElementById('sb-high').textContent =
+        (nvdData.vulns||[]).filter(v=>v.severity==='HIGH').length;
+      document.getElementById('sb-kev').textContent = data.kev_count || 0;
+      document.getElementById('sb-total-kev').textContent = data.total_kev || '—';
+      document.getElementById('tab-count-nvd').textContent = (nvdData.vulns||[]).length;
+
+      const ts = data.cached_at || data.fetched_at || '';
+      if(ts) document.getElementById('lastUpdated').textContent =
+        'Last updated: ' + ts.replace('T',' ').slice(0,16) + ' UTC';
+
+      document.getElementById('feedStatus').textContent = 'LIVE';
+      renderNVD();
+    }
+
+    if(kevResp.ok){
+      kevData = await kevResp.json();
+      document.getElementById('tab-count-kev').textContent =
+        kevData.count || 0;
+      renderKEV();
+    }
+
+  }catch(e){
+    document.getElementById('feedStatus').textContent = 'OFFLINE';
+    document.getElementById('cve-list').innerHTML = errorState('Could not reach API — make sure XentinelAI is running.');
+    toast('Could not load threat feed','error');
+  }
+}
+
+async function refreshFeed(){
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  btn.textContent = 'Refreshing...';
+  try{
+    const resp = await fetch(`${API}/threats/refresh`, {method:'POST'});
+    if(!resp.ok) throw new Error(await resp.text());
+    toast('Threat feed refreshed','success');
+    await loadThreats();
+  }catch(e){
+    toast('Refresh failed: '+String(e).slice(0,60),'error');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = '↺ Refresh Now';
+  }
+}
+
+// ── Filter ───────────────────────────────────────────────────────────────────
+function setFilter(el, f){
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  curFilter = f;
+  renderNVD();
+}
+
+// ── Render NVD ───────────────────────────────────────────────────────────────
+function renderNVD(){
+  const list = document.getElementById('cve-list');
+  if(!nvdData || !nvdData.vulns){
+    list.innerHTML = `<div class="loading-state"><div class="spinner"></div><div class="loading-text">Loading...</div></div>`;
+    return;
+  }
+
+  const q = (document.getElementById('cve-search').value||'').toLowerCase();
+  let vulns = nvdData.vulns || [];
+
+  // Filter
+  if(curFilter === 'CRITICAL') vulns = vulns.filter(v=>v.severity==='CRITICAL');
+  else if(curFilter === 'HIGH') vulns = vulns.filter(v=>v.severity==='HIGH');
+  else if(curFilter === 'KEV')  vulns = vulns.filter(v=>v.kev);
+
+  // Search
+  if(q) vulns = vulns.filter(v=>
+    v.cve_id.toLowerCase().includes(q) ||
+    v.description.toLowerCase().includes(q) ||
+    (v.cwes||[]).some(c=>c.toLowerCase().includes(q))
+  );
+
+  if(!vulns.length){
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🛡</div><div class="empty-title">No matches</div><div class="empty-sub">Try a different filter or search term.</div></div>`;
+    return;
+  }
+
+  list.innerHTML = vulns.map((v,i)=>{
+    const isKev   = v.kev;
+    const cardCls = `cve-card sev-${esc(v.severity)}${isKev?' is-kev':''}`;
+    const scoreClass = v.severity==='CRITICAL'?'score-critical':'score-high';
+    const refs    = (v.refs||[]).map(r=>
+      `<a class="cve-ref" href="${esc(r)}" target="_blank" rel="noopener">↗ Ref</a>`
+    ).join('');
+    const cwes = (v.cwes||[]).map(c=>`<span class="cwe-tag">${esc(c)}</span>`).join('');
+    const kevBadge  = isKev ? `<span class="kev-badge">⚠ KEV</span>` : '';
+    const kevAction = (isKev && v.kev_badge)
+      ? `<div class="kev-action">${esc(v.kev_badge)}</div>` : '';
+    const nvdUrl = `https://nvd.nist.gov/vuln/detail/${esc(v.cve_id)}`;
+
+    return `<div class="${cardCls}" id="cve-${esc(v.cve_id)}" style="animation-delay:${i*.03}s">
+      <div class="cve-header" onclick="toggleCVE('${esc(v.cve_id)}')">
+        <div class="cve-id"><a href="${nvdUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(v.cve_id)}</a></div>
+        <span class="sev-badge ${esc(v.severity)}">${esc(v.severity)}</span>
+        ${kevBadge}
+        ${v.score!=null?`<span class="score-badge ${scoreClass}">${v.score}</span>`:''}
+        <div class="cve-desc">${esc(v.description)}</div>
+        <div class="cve-date">${esc(v.published||'')}</div>
+        <div class="cve-toggle">+</div>
+      </div>
+      <div class="cve-body">
+        <div class="cve-full-desc">${esc(v.description)}</div>
+        <div class="cve-meta-row">
+          <div class="cve-meta-item">Score: <span>${v.score!=null?v.score:'N/A'}</span></div>
+          <div class="cve-meta-item">Published: <span>${esc(v.published||'—')}</span></div>
+          ${v.vector?`<div class="cve-meta-item">Vector: <span style="font-size:9px">${esc(v.vector.slice(0,40))}</span></div>`:''}
+        </div>
+        ${cwes?`<div class="cwe-tags">${cwes}</div>`:''}
+        ${kevAction}
+        ${refs?`<div class="cve-refs">${refs}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCVE(id){
+  document.getElementById('cve-'+id)?.classList.toggle('expanded');
+}
+
+// ── Render KEV ───────────────────────────────────────────────────────────────
+function renderKEV(){
+  const list = document.getElementById('kev-list');
+  if(!kevData||!kevData.vulns){
+    list.innerHTML=`<div class="loading-state"><div class="spinner"></div><div class="loading-text">Loading KEV...</div></div>`;
+    return;
+  }
+  if(!kevData.vulns.length){
+    list.innerHTML=`<div class="empty-state"><div class="empty-icon">✓</div><div class="empty-title">No data</div></div>`;
+    return;
+  }
+  list.innerHTML = kevData.vulns.map((v,i)=>`
+    <div class="kev-item" style="animation-delay:${i*.03}s">
+      <div class="ki-header">
+        <div class="ki-cve"><a href="https://nvd.nist.gov/vuln/detail/${esc(v.cve_id)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${esc(v.cve_id)}</a></div>
+        <div class="ki-product">
+          <div class="ki-vendor">${esc(v.vendor)} — ${esc(v.product)}</div>
+          <div class="ki-name">${esc(v.vuln_name)}</div>
+        </div>
+        <div class="ki-date">
+          <div>Added: ${esc(v.date_added)}</div>
+          ${v.due_date?`<div class="ki-due">Due: ${esc(v.due_date)}</div>`:''}
+        </div>
+      </div>
+      <div class="ki-desc">${esc(v.description)}</div>
+      ${v.action?`<div class="ki-action">${esc(v.action)}</div>`:''}
+    </div>`).join('');
+}
+
+// ── Utils ────────────────────────────────────────────────────────────────────
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function errorState(msg){return `<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-title">Error</div><div class="empty-sub">${esc(msg)}</div></div>`;}
+let _tt;
+function toast(msg,type='info'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className=`toast ${type} show`;
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+loadThreats();
+</script>
+</body>
+</html>

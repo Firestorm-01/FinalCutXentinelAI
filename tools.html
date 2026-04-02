@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<title>XentinelAI — Security Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#050608;--bg2:#080b10;--surface:#0d1117;--surface2:#111820;
+  --border:rgba(255,255,255,0.07);--border-bright:rgba(99,255,180,0.25);
+  --accent:#63ffb4;--accent2:#ff4d6d;--accent3:#ffd166;--accent4:#4da6ff;
+  --text:#e8edf5;--muted:#a9acb0;--muted2:#555f72;
+  --font-display:'Syne',sans-serif;--font-mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);min-height:100vh;overflow-x:hidden;cursor:none}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9000;opacity:.4}
+.cursor{position:fixed;width:10px;height:10px;background:var(--accent);border-radius:50%;pointer-events:none;z-index:9999;mix-blend-mode:screen;transform:translate(-50%,-50%)}
+.cursor-ring{position:fixed;width:34px;height:34px;border:1px solid rgba(99,255,180,.4);border-radius:50%;pointer-events:none;z-index:9998;transition:width .2s,height .2s;transform:translate(-50%,-50%)}
+.grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(99,255,180,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(99,255,180,.03) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black,transparent)}
+.orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0}
+.orb-1{width:600px;height:600px;background:radial-gradient(circle,rgba(99,255,180,.05),transparent 70%);top:-200px;right:-100px;animation:float1 9s ease-in-out infinite}
+.orb-2{width:400px;height:400px;background:radial-gradient(circle,rgba(77,166,255,.04),transparent 70%);bottom:0;left:-100px;animation:float2 11s ease-in-out infinite}
+@keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,40px)}}
+@keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-30px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes scanAnim{0%{transform:scaleX(0);transform-origin:left}50%{transform:scaleX(1);transform-origin:left}50.01%{transform:scaleX(1);transform-origin:right}100%{transform:scaleX(0);transform-origin:right}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+@keyframes barGrow{from{width:0}to{width:var(--bar-w)}}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(5,6,8,.97),transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-wordmark{font-family:var(--font-display);font-weight:800;font-size:17px;letter-spacing:-.02em}
+.nav-wordmark span{color:var(--accent)}
+.nav-right{display:flex;align-items:center;gap:14px}
+.nav-badge{font-family:var(--font-mono);font-size:10px;color:var(--accent);border:1px solid var(--border-bright);padding:4px 10px;letter-spacing:.08em}
+.btn-back{font-family:var(--font-mono);font-size:11px;color:var(--muted);background:transparent;border:1px solid var(--border);padding:7px 14px;cursor:none;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn-back:hover{border-color:var(--accent);color:var(--accent)}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:220px 1fr;padding-top:57px;min-height:100vh;position:relative;z-index:1}
+
+/* SIDEBAR */
+.sidebar{position:sticky;top:57px;height:calc(100vh - 57px);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;background:rgba(5,6,8,.6)}
+.sidebar-top{padding:28px 20px 16px}
+.sidebar-brand-label{font-family:var(--font-mono);font-size:9px;color:var(--muted2);letter-spacing:.16em;text-transform:uppercase;margin-bottom:4px}
+.sidebar-brand-title{font-size:20px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.sidebar-brand-title span{color:var(--accent)}
+.sidebar-divider{height:1px;background:var(--border);margin:16px 0}
+.sidebar-section{padding:0 20px;font-family:var(--font-mono);font-size:9px;color:var(--muted2);letter-spacing:.14em;text-transform:uppercase;margin:16px 0 6px}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-family:var(--font-mono);font-size:12px;color:var(--muted);cursor:none;border-left:2px solid transparent;transition:all .2s;user-select:none}
+.sidebar-item:hover{color:var(--text);background:rgba(255,255,255,.02)}
+.sidebar-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(99,255,180,.04)}
+.sidebar-item svg{opacity:.5;transition:opacity .2s;flex-shrink:0}
+.sidebar-item.active svg{opacity:1}
+.sidebar-badge{margin-left:auto;font-family:var(--font-mono);font-size:10px;font-weight:700;padding:1px 7px}
+.badge-green{background:rgba(99,255,180,.1);color:var(--accent);border:1px solid rgba(99,255,180,.2)}
+.badge-blue{background:rgba(77,166,255,.1);color:var(--accent4);border:1px solid rgba(77,166,255,.2)}
+.badge-yellow{background:rgba(255,209,102,.1);color:var(--accent3);border:1px solid rgba(255,209,102,.2)}
+.sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
+.sidebar-hint{font-family:var(--font-mono);font-size:10px;color:var(--muted2);line-height:1.6}
+
+/* MAIN */
+main{min-width:0;overflow-x:hidden}
+.section{display:none}.section.active{display:block;animation:fadeIn .3s ease}
+
+/* HERO */
+.tool-hero{padding:40px 48px 28px;border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+.tool-hero::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(99,255,180,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(99,255,180,.03) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse 80% 60% at 20% 50%,black,transparent)}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--border-bright);padding:5px 14px;margin-bottom:16px;animation:fadeUp .4s ease both}
+.hero-tag::before{content:'';width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite}
+.hero-title{font-size:clamp(32px,4vw,54px);font-weight:800;line-height:.95;letter-spacing:-.04em;margin-bottom:10px;animation:fadeUp .4s .06s ease both}
+.hero-title .outline{color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.6)}
+.hero-title .green{color:var(--accent)}
+.hero-sub{font-family:var(--font-mono);font-size:12px;color:var(--muted);line-height:1.65;max-width:500px;animation:fadeUp .4s .12s ease both}
+
+/* SCAN-STYLE CARD */
+.tool-card{background:var(--surface);border:1px solid var(--border);position:relative;overflow:hidden;animation:fadeUp .4s .2s ease both;margin:0 48px 20px}
+.tool-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;opacity:.6}
+.tool-card.accent-green::before{background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.tool-card.accent-blue::before{background:linear-gradient(90deg,transparent,var(--accent4),transparent)}
+.tool-card.accent-yellow::before{background:linear-gradient(90deg,transparent,var(--accent3),transparent)}
+.terminal-header{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.02)}
+.terminal-dots{display:flex;gap:6px}
+.td{width:10px;height:10px;border-radius:50%}
+.td-r{background:var(--accent2)}.td-y{background:var(--accent3)}.td-g{background:var(--accent)}
+.terminal-title{font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.06em}
+.card-body{padding:22px}
+
+/* INPUT ROW */
+.input-row{display:flex;gap:10px;align-items:stretch;margin-bottom:16px}
+.xin{flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:13px;padding:12px 16px;outline:none;transition:border-color .2s}
+.xin:focus{border-color:var(--accent)}
+.xin::placeholder{color:var(--muted2)}
+.xin.err{border-color:var(--accent2)}
+
+/* BUTTONS */
+.btn-primary{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--bg);background:var(--accent);padding:12px 24px;border:none;letter-spacing:.08em;text-transform:uppercase;cursor:none;white-space:nowrap;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);transition:all .2s;position:relative;overflow:hidden}
+.btn-primary::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.18);transform:translateX(-100%);transition:transform .3s}
+.btn-primary:hover::after{transform:translateX(0)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,255,180,.2)}
+.btn-primary:disabled{background:var(--muted2);cursor:not-allowed;clip-path:none;box-shadow:none}
+.btn-primary:disabled::after{display:none}
+.btn-primary.blue{background:var(--accent4)}
+.btn-primary.blue:hover{box-shadow:0 6px 20px rgba(77,166,255,.2)}
+.btn-primary.yellow{background:var(--accent3)}
+.btn-primary.yellow:hover{box-shadow:0 6px 20px rgba(255,209,102,.2)}
+.btn-secondary{font-family:var(--font-mono);font-size:10px;color:var(--muted);background:transparent;border:1px solid var(--border);padding:8px 16px;cursor:none;letter-spacing:.08em;text-transform:uppercase;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-secondary:hover{border-color:rgba(255,255,255,.15);color:var(--text)}
+
+/* PROGRESS BAR */
+.scan-progress{display:none;margin-bottom:16px;border-top:1px solid var(--border);padding-top:16px}
+.scan-progress.show{display:block}
+.scan-line-anim{height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);margin:6px 0 10px;animation:scanAnim 2s ease-in-out infinite;opacity:.5}
+.progress-steps{display:flex;flex-direction:column;gap:5px}
+.pstep{display:flex;align-items:center;gap:10px;font-family:var(--font-mono);font-size:11px;color:var(--muted2);transition:color .3s}
+.pstep.done{color:var(--accent)}.pstep.running{color:var(--accent3)}.pstep.error{color:var(--accent2)}
+.pdot{width:7px;height:7px;border-radius:50%;background:var(--muted2);flex-shrink:0;transition:background .3s}
+.pstep.done .pdot{background:var(--accent);box-shadow:0 0 5px var(--accent)}
+.pstep.running .pdot{background:var(--accent3);animation:pulse .8s infinite}
+.pstep.error .pdot{background:var(--accent2)}
+
+/* OUTPUT */
+.output-area{min-height:180px;max-height:560px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);padding:14px 16px;font-family:var(--font-mono);font-size:12px;line-height:1.7;position:relative}
+.output-area::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(99,255,180,.2),transparent)}
+.output-area::-webkit-scrollbar{width:3px}
+.output-area::-webkit-scrollbar-thumb{background:var(--muted2)}
+.placeholder-text{color:var(--muted2);font-size:12px;line-height:1.9}
+.placeholder-text .kw{color:var(--accent)}
+.placeholder-text .kw2{color:var(--accent3)}
+.placeholder-text .kw3{color:var(--accent4)}
+.placeholder-text .comment{color:var(--muted2);opacity:.55}
+
+/* SECRET CARDS */
+.secret-card{border-left:3px solid var(--accent2);padding:12px 16px;margin-bottom:8px;background:rgba(255,77,109,.04);animation:slideIn .25s ease both}
+.secret-card:hover{background:rgba(255,77,109,.06)}
+.sc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.sc-svc{color:var(--accent2);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.sc-name{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:3px}
+.sc-risk{color:var(--muted);font-size:11px;margin-bottom:8px;line-height:1.5}
+.sc-steps{color:var(--text);font-size:11px;line-height:1.85}
+.sc-steps .n{color:var(--accent3);font-weight:700}
+.sc-code{background:var(--bg2);border:1px solid var(--border);border-left:2px solid var(--accent);padding:10px 14px;margin-top:8px;font-size:11px;color:var(--accent);white-space:pre-wrap;word-break:break-all;line-height:1.6}
+.sc-code.sm{color:var(--accent4);border-left-color:var(--accent4)}
+.sc-urgency{font-family:var(--font-mono);font-size:10px;margin-top:6px;padding:3px 10px;display:inline-block}
+.urgency-critical{color:var(--accent2);background:rgba(255,77,109,.08);border:1px solid rgba(255,77,109,.2)}
+.urgency-high{color:var(--accent3);background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)}
+.urgency-medium{color:var(--accent4);background:rgba(77,166,255,.08);border:1px solid rgba(77,166,255,.2)}
+.urgency-low{color:var(--accent);background:rgba(99,255,180,.06);border:1px solid rgba(99,255,180,.15)}
+
+/* ── DEP CARDS — rich redesign ── */
+.dep-card{
+  margin-bottom:10px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-left:3px solid var(--accent3);
+  animation:slideIn .25s ease both;
+  transition:border-color .2s,background .2s;
+}
+.dep-card:hover{background:var(--surface2);border-color:rgba(255,209,102,.25)}
+.dep-card.crit{border-left-color:var(--accent2)}
+.dep-card.crit:hover{border-color:rgba(255,77,109,.3)}
+.dep-card.sev-high{border-left-color:var(--accent3)}
+.dep-card.sev-medium{border-left-color:var(--accent4)}
+.dep-card.sev-medium:hover{border-color:rgba(77,166,255,.3)}
+.dep-card.sev-low{border-left-color:var(--muted2)}
+
+/* Card top bar */
+.dep-topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 16px 0;
+  gap:10px;
+}
+.dep-pkg-name{
+  font-family:var(--font-display);font-size:15px;font-weight:700;
+  color:var(--accent3);letter-spacing:-.01em;
+}
+.dep-card.crit .dep-pkg-name{color:var(--accent2)}
+.dep-card.sev-medium .dep-pkg-name{color:var(--accent4)}
+.dep-card.sev-low .dep-pkg-name{color:var(--muted)}
+.dep-badges{display:flex;align-items:center;gap:6px;flex-shrink:0}
+
+/* Ecosystem pill */
+.eco-pill{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  padding:2px 8px;border:1px solid var(--border);color:var(--muted2);
+}
+.eco-pypi{border-color:rgba(77,166,255,.3);color:var(--accent4);background:rgba(77,166,255,.06)}
+.eco-npm{border-color:rgba(255,209,102,.3);color:var(--accent3);background:rgba(255,209,102,.06)}
+.eco-go{border-color:rgba(99,255,180,.3);color:var(--accent);background:rgba(99,255,180,.06)}
+.eco-packagist{border-color:rgba(255,77,109,.3);color:var(--accent2);background:rgba(255,77,109,.06)}
+
+/* CVE + vuln ID row */
+.dep-id-row{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:6px 16px 0;
+}
+.dep-cve{
+  font-family:var(--font-mono);font-size:11px;font-weight:700;
+  color:var(--accent4);background:rgba(77,166,255,.08);
+  border:1px solid rgba(77,166,255,.2);padding:2px 10px;
+}
+.dep-osv{
+  font-family:var(--font-mono);font-size:10px;color:var(--muted2);
+}
+.dep-published{
+  font-family:var(--font-mono);font-size:10px;color:var(--muted2);margin-left:auto;
+}
+
+/* CVSS gauge */
+.dep-cvss-wrap{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 16px 0;
+}
+.cvss-label{font-family:var(--font-mono);font-size:10px;color:var(--muted2);flex-shrink:0;width:62px}
+.cvss-track{flex:1;height:4px;background:rgba(255,255,255,.06);position:relative;overflow:hidden}
+.cvss-bar{height:100%;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.cvss-bar.crit-bar{background:var(--accent2)}
+.cvss-bar.high-bar{background:var(--accent3)}
+.cvss-bar.med-bar{background:var(--accent4)}
+.cvss-bar.low-bar{background:var(--accent)}
+.cvss-score{font-family:var(--font-mono);font-size:11px;font-weight:700;flex-shrink:0;width:32px;text-align:right}
+.cvss-score.crit-score{color:var(--accent2)}
+.cvss-score.high-score{color:var(--accent3)}
+.cvss-score.med-score{color:var(--accent4)}
+.cvss-score.low-score{color:var(--accent)}
+
+/* Summary / description */
+.dep-summary{
+  font-family:var(--font-mono);font-size:11px;color:var(--muted);
+  line-height:1.65;padding:8px 16px 0;
+}
+
+/* Version + fix row */
+.dep-version-row{
+  display:flex;align-items:center;gap:0;
+  padding:10px 16px 0;flex-wrap:wrap;
+}
+.dep-ver-item{
+  font-family:var(--font-mono);font-size:11px;
+  padding:4px 12px;border:1px solid var(--border);
+  background:var(--bg2);color:var(--muted);
+}
+.dep-ver-item + .dep-ver-item{border-left:none}
+.dep-ver-item .vk{color:var(--muted2);font-size:10px;display:block;margin-bottom:1px}
+.dep-ver-item .vv{color:var(--text)}
+.dep-ver-item.has-fix .vv{color:var(--accent)}
+.dep-arrow{
+  font-family:var(--font-mono);font-size:14px;color:var(--accent);
+  padding:0 8px;align-self:center;
+}
+
+/* Fix snippet */
+.dep-fix-snippet{
+  margin:8px 16px 0;
+  background:var(--bg);border:1px solid var(--border);
+  border-left:2px solid var(--accent);
+  padding:8px 14px;
+  font-family:var(--font-mono);font-size:11px;color:var(--accent);
+  white-space:pre-wrap;word-break:break-all;line-height:1.6;
+}
+
+/* Manifest path */
+.dep-manifest{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--font-mono);font-size:10px;color:var(--muted2);
+  padding:8px 16px 0;
+}
+.dep-manifest svg{opacity:.5}
+
+/* References */
+.dep-refs{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:8px 16px 12px;
+}
+.dep-ref-link{
+  font-family:var(--font-mono);font-size:10px;color:var(--accent4);
+  text-decoration:none;border:1px solid rgba(77,166,255,.15);
+  padding:2px 8px;transition:border-color .2s;
+}
+.dep-ref-link:hover{border-color:var(--accent4)}
+.dep-refs-label{font-family:var(--font-mono);font-size:10px;color:var(--muted2)}
+
+/* CONFIDENCE CARDS */
+.conf-card{padding:12px 16px;margin-bottom:6px;background:var(--surface2);border:1px solid var(--border);animation:slideIn .25s ease both;transition:border-color .2s}
+.conf-card:hover{border-color:rgba(255,255,255,.1)}
+.cf-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cf-name{font-size:13px;font-weight:600;color:var(--text)}
+.bar-wrap{height:3px;background:rgba(255,255,255,.07);margin-bottom:6px}
+.bar-fill{height:100%;transition:width .6s ease}
+.bar-g{background:var(--accent)}.bar-y{background:var(--accent3)}.bar-r{background:var(--accent2)}
+.cf-breakdown{display:flex;gap:10px;flex-wrap:wrap;font-family:var(--font-mono);font-size:10px}
+.cf-breakdown .pos{color:var(--accent)}.cf-breakdown .neg{color:var(--accent2)}.cf-breakdown .neu{color:var(--muted2)}
+
+/* SEVERITY BADGES */
+.sev-badge{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;flex-shrink:0}
+.sev-badge.CRITICAL{background:rgba(255,77,109,.15);color:var(--accent2);border:1px solid rgba(255,77,109,.3)}
+.sev-badge.HIGH{background:rgba(255,209,102,.1);color:var(--accent3);border:1px solid rgba(255,209,102,.25)}
+.sev-badge.MEDIUM{background:rgba(77,166,255,.1);color:var(--accent4);border:1px solid rgba(77,166,255,.25)}
+.sev-badge.LOW{background:rgba(99,255,180,.08);color:var(--accent);border:1px solid rgba(99,255,180,.2)}
+.conf-badge{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.1em;padding:2px 8px;text-transform:uppercase}
+.conf-badge.high{background:rgba(99,255,180,.1);color:var(--accent);border:1px solid rgba(99,255,180,.2)}
+.conf-badge.medium{background:rgba(255,209,102,.1);color:var(--accent3);border:1px solid rgba(255,209,102,.25)}
+.conf-badge.low{background:rgba(255,77,109,.12);color:var(--accent2);border:1px solid rgba(255,77,109,.25)}
+
+/* DROP ZONE */
+.drop-zone{border:1px dashed var(--border);padding:28px;text-align:center;cursor:none;transition:all .2s;margin-bottom:16px}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:rgba(99,255,180,.02)}
+.drop-text{font-family:var(--font-mono);font-size:13px;color:var(--muted)}
+.drop-text span{color:var(--accent)}
+.drop-sub{font-family:var(--font-mono);font-size:11px;color:var(--muted2);margin-top:6px}
+.drop-file-name{font-family:var(--font-mono);font-size:11px;color:var(--accent);margin-top:8px}
+
+/* FILTER ROW */
+.filter-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.filter-btn{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:none;transition:all .2s}
+.filter-btn:hover{border-color:rgba(255,255,255,.15);color:var(--text)}
+.filter-btn.fall.active{border-color:var(--accent);color:var(--accent);background:rgba(99,255,180,.06)}
+.filter-btn.fc.active{border-color:var(--accent2);color:var(--accent2);background:rgba(255,77,109,.06)}
+.filter-btn.fh.active{border-color:var(--accent3);color:var(--accent3);background:rgba(255,209,102,.06)}
+.filter-btn.fm.active{border-color:var(--accent4);color:var(--accent4);background:rgba(77,166,255,.06)}
+
+/* STATUS LINE */
+.status-line{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;color:var(--muted2);margin-bottom:12px}
+.spinner{display:inline-block;width:11px;height:11px;border:1.5px solid rgba(99,255,180,.15);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--border);margin:0 48px 20px;background:var(--border)}
+.stat-card{background:var(--surface);padding:18px 22px;position:relative;overflow:hidden;transition:background .2s}
+.stat-card:hover{background:rgba(255,255,255,.02)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat-card.sg::before{background:var(--accent)}
+.stat-card.sb::before{background:var(--accent4)}
+.stat-card.sy::before{background:var(--accent3)}
+.stat-num{font-size:32px;font-weight:800;letter-spacing:-.04em;line-height:1;margin-bottom:4px}
+.stat-num.sg{color:var(--accent)}.stat-num.sb{color:var(--accent4)}.stat-num.sy{color:var(--accent3)}
+.stat-label{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+
+/* EMPTY/ERROR */
+.empty-state{padding:40px;text-align:center;font-family:var(--font-mono);font-size:12px;color:var(--muted2)}
+.err-state{color:var(--accent2);font-family:var(--font-mono);font-size:12px;line-height:1.65}
+.err-state .hint{color:var(--muted2);margin-top:4px;font-size:11px}
+
+/* OUTPUT TOOLBAR */
+.output-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.output-count{font-family:var(--font-mono);font-size:10px;color:var(--muted2)}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--surface);border:1px solid var(--border);padding:11px 18px;font-family:var(--font-mono);font-size:11px;color:var(--text);transform:translateY(40px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:10px;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+.toast::before{content:'';width:2px;align-self:stretch;flex-shrink:0}
+.toast.success::before{background:var(--accent)}.toast.error::before{background:var(--accent2)}.toast.info::before{background:var(--accent4)}
+
+#dep-file-input{display:none}
+
+/* SCAN DROPDOWN */
+.scan-select-wrap{position:relative;display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.scan-select-label{font-family:var(--font-mono);font-size:9px;color:var(--muted2);letter-spacing:.12em;text-transform:uppercase}
+.scan-picker{display:flex;gap:8px;align-items:stretch}
+.scan-picker .xin{flex:1}
+.scan-dd{background:var(--bg2);border:1px solid var(--border);color:var(--muted);font-family:var(--font-mono);font-size:12px;padding:12px 12px;outline:none;cursor:pointer;transition:border-color .2s;min-width:0;flex-shrink:0}
+.scan-dd:focus{border-color:var(--accent)}
+.scan-dd option{background:var(--bg2);color:var(--text)}
+.scan-dd-btn{font-family:var(--font-mono);font-size:10px;color:var(--muted2);background:transparent;border:1px solid var(--border);padding:0 12px;cursor:none;transition:all .2s;white-space:nowrap;letter-spacing:.06em}
+.scan-dd-btn:hover{border-color:rgba(255,255,255,.15);color:var(--text)}
+.scan-history-note{font-family:var(--font-mono);font-size:10px;color:var(--muted2);margin-top:-4px}
+.scan-history-note span{color:var(--accent4)}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--muted2)}
+</style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="grid-bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="toast" id="toast"></div>
+
+<nav>
+  <div class="nav-logo">
+    <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+      <path d="M14 2L3 7.5V16C3 21 7.8 25.5 14 27C20.2 25.5 25 21 25 16V7.5L14 2Z" stroke="#63ffb4" stroke-width="1.5" fill="none"/>
+      <path d="M10 14l3 3L18 11" stroke="#63ffb4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="nav-wordmark">Xentinel<span>AI</span></div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-badge">SECURITY TOOLS</div>
+    <a href="/dashboard.html" class="btn-back">&#8592; Dashboard</a>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-brand-label">Module</div>
+      <div class="sidebar-brand-title">Security<br><span>Tools</span></div>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Analysis</div>
+    <div class="sidebar-item active" onclick="showSection('secret')" id="nav-secret">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Secret Advisor
+      <span class="sidebar-badge badge-green" id="sa-badge" style="display:none">0</span>
+    </div>
+    <div class="sidebar-item" onclick="showSection('deps')" id="nav-deps">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      Dep Scanner
+      <span class="sidebar-badge badge-yellow" id="dep-badge" style="display:none">0</span>
+    </div>
+    <div class="sidebar-item" onclick="showSection('confidence')" id="nav-confidence">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Fix Confidence
+      <span class="sidebar-badge badge-blue" id="cf-badge" style="display:none">0</span>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Endpoints</div>
+    <div class="sidebar-item" style="cursor:none;pointer-events:none">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+      <span style="font-size:10px;color:var(--muted2)">/scan/{id}/secret-advisor</span>
+    </div>
+    <div class="sidebar-item" style="cursor:none;pointer-events:none">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+      <span style="font-size:10px;color:var(--muted2)">/scan/deps</span>
+    </div>
+    <div class="sidebar-item" style="cursor:none;pointer-events:none">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+      <span style="font-size:10px;color:var(--muted2)">/scan/{id}/confidence</span>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="sidebar-hint">Scan IDs from the<br>main dashboard scan.</div>
+    </div>
+  </aside>
+
+  <main>
+
+    <!-- SECRET ADVISOR -->
+    <div id="section-secret" class="section active">
+      <div class="tool-hero">
+        <div class="hero-tag">Secret Advisor</div>
+        <h1 class="hero-title">Hardcoded <span class="outline">Secrets.</span></h1>
+        <p class="hero-sub">Reads your scan findings, identifies every hardcoded credential, and returns a per-secret runbook — rotation steps, replacement code, and AWS Secrets Manager commands.</p>
+      </div>
+      <div style="height:20px"></div>
+      <div class="tool-card accent-green">
+        <div class="terminal-header">
+          <div class="terminal-dots"><div class="td td-r"></div><div class="td td-y"></div><div class="td td-g"></div></div>
+          <div class="terminal-title">secret_advisor.py — /scan/{id}/secret-advisor</div>
+          <button class="btn-secondary" onclick="copyOutput('sa-output')">copy output</button>
+        </div>
+        <div class="card-body">
+          <div class="scan-select-wrap">
+            <div class="scan-select-label">Select or enter scan ID</div>
+            <div class="scan-picker">
+              <select class="scan-dd" id="sa-scan-dd" onchange="onSaDropdown(this)">
+                <option value="">&#x25BC; Recent scans...</option>
+              </select>
+              <button class="scan-dd-btn" onclick="loadRecentScans('sa-scan-dd','sa-scan-id')">&#x21BB; Refresh</button>
+            </div>
+            <input class="xin" id="sa-scan-id" placeholder="Or type scan ID manually — e.g. scan_abc123" autocomplete="off" spellcheck="false"/>
+            <div class="scan-history-note">Scans are loaded from <span>/reports</span> on the server</div>
+          </div>
+          <div class="input-row" style="margin-bottom:0">
+            <button class="btn-primary" id="sa-btn" onclick="runSecretAdvisor()" style="width:100%">&#9654; Run Secret Advisor</button>
+          </div>
+          <div class="scan-progress" id="sa-progress">
+            <div class="scan-line-anim"></div>
+            <div class="progress-steps" id="sa-steps"></div>
+          </div>
+          <div id="sa-output" class="output-area">
+            <div class="placeholder-text">
+              <span class="comment">// secret_advisor output</span><br>
+              <span class="kw">&#x25BA; Enter a scan ID</span> and click Run Advisor<br><br>
+              Returns per-secret runbook:<br>
+              <span class="kw2">service_name</span> · <span class="kw2">risk_description</span> · <span class="kw2">rotation_steps[]</span><br>
+              <span class="kw2">replacement_code</span> · <span class="kw">aws secretsmanager create-secret</span><br><br>
+              <span class="comment">// Supports: AWS IAM, Stripe, GitHub, Twilio, SendGrid, GCP, Azure...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEP SCANNER -->
+    <div id="section-deps" class="section">
+      <div class="tool-hero">
+        <div class="hero-tag">Dependency Scanner</div>
+        <h1 class="hero-title">Vulnerable <span class="outline">Packages.</span></h1>
+        <p class="hero-sub">Upload a project ZIP. Finds all manifests, queries the OSV database in batch, and returns findings with CVSS scores and exact fixed versions.</p>
+      </div>
+      <div style="height:20px"></div>
+      <div class="stats-row" id="dep-stats" style="display:none">
+        <div class="stat-card sg"><div class="stat-num sg" id="dep-stat-total">0</div><div class="stat-label">Total Findings</div></div>
+        <div class="stat-card sy"><div class="stat-num sy" id="dep-stat-high">0</div><div class="stat-label">Critical + High</div></div>
+        <div class="stat-card sb"><div class="stat-num sb" id="dep-stat-fixed">0</div><div class="stat-label">Have Fix Available</div></div>
+      </div>
+      <div class="tool-card accent-yellow">
+        <div class="terminal-header">
+          <div class="terminal-dots"><div class="td td-r"></div><div class="td td-y"></div><div class="td td-g"></div></div>
+          <div class="terminal-title">dep_scanner.py — POST /scan/deps</div>
+          <button class="btn-secondary" onclick="copyOutput('dep-output')">copy output</button>
+        </div>
+        <div class="card-body">
+          <div class="drop-zone" id="dep-drop" onclick="document.getElementById('dep-file-input').click()">
+            <div class="drop-text">Drop ZIP here or <span>click to browse</span></div>
+            <div class="drop-sub">requirements.txt &middot; package.json &middot; Pipfile &middot; composer.json &middot; go.mod</div>
+            <div class="drop-file-name" id="dep-filename"></div>
+          </div>
+          <input type="file" id="dep-file-input" accept=".zip" onchange="runDepScan(this.files[0])"/>
+          <div class="status-line" id="dep-status" style="display:none"></div>
+          <div class="scan-progress" id="dep-progress">
+            <div class="scan-line-anim"></div>
+            <div class="progress-steps" id="dep-steps"></div>
+          </div>
+          <div class="filter-row" id="dep-filter-row" style="display:none">
+            <button class="filter-btn fall active" onclick="depFilter(this,'all')">All</button>
+            <button class="filter-btn fc" onclick="depFilter(this,'CRITICAL')">Critical</button>
+            <button class="filter-btn fh" onclick="depFilter(this,'HIGH')">High</button>
+            <button class="filter-btn fm" onclick="depFilter(this,'MEDIUM')">Medium</button>
+            <span class="output-count" id="dep-count"></span>
+          </div>
+          <div id="dep-output" class="output-area">
+            <div class="placeholder-text">
+              <span class="comment">// dep_scanner output</span><br>
+              <span class="kw">&#x25BA; Upload a project ZIP</span><br><br>
+              Finds all manifests &rarr; queries OSV in batch<br>
+              Returns: <span class="kw2">package</span> · <span class="kw2">CVE ID</span> · <span class="kw2">CVSS score</span> · <span class="kw">fixed_version</span><br><br>
+              <span class="comment">// One HTTP call per manifest · CRITICAL/HIGH from CVSS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FIX CONFIDENCE -->
+    <div id="section-confidence" class="section">
+      <div class="tool-hero">
+        <div class="hero-tag">Fix Confidence</div>
+        <h1 class="hero-title">Scored <span class="outline">Fixes.</span></h1>
+        <p class="hero-sub">Scores every AI-generated fix 0–100. Rewards parameterised queries, shell escaping, and context-aware variable names. Penalises placeholders and truncation.</p>
+      </div>
+      <div style="height:20px"></div>
+      <div class="tool-card accent-blue">
+        <div class="terminal-header">
+          <div class="terminal-dots"><div class="td td-r"></div><div class="td td-y"></div><div class="td td-g"></div></div>
+          <div class="terminal-title">fix_confidence.py — /scan/{id}/confidence</div>
+          <button class="btn-secondary" onclick="copyOutput('cf-output')">copy output</button>
+        </div>
+        <div class="card-body">
+          <div class="scan-select-wrap">
+            <div class="scan-select-label">Select or enter scan ID</div>
+            <div class="scan-picker">
+              <select class="scan-dd" id="cf-scan-dd" onchange="onCfDropdown(this)">
+                <option value="">&#x25BC; Recent scans...</option>
+              </select>
+              <button class="scan-dd-btn" onclick="loadRecentScans('cf-scan-dd','cf-scan-id')">&#x21BB; Refresh</button>
+            </div>
+            <input class="xin" id="cf-scan-id" placeholder="Or type scan ID manually — e.g. scan_abc123" autocomplete="off" spellcheck="false"/>
+            <div class="scan-history-note">Only scans with AI-generated fixes will return scores</div>
+          </div>
+          <div class="input-row" style="margin-bottom:0">
+            <button class="btn-primary blue" id="cf-btn" onclick="runConfidence()" style="width:100%">&#9654; Score Fixes</button>
+          </div>
+          <div class="scan-progress" id="cf-progress">
+            <div class="scan-line-anim"></div>
+            <div class="progress-steps" id="cf-steps"></div>
+          </div>
+          <div id="cf-output" class="output-area">
+            <div class="placeholder-text">
+              <span class="comment">// fix_confidence output</span><br>
+              <span class="kw">&#x25BA; Enter a scan ID</span> and click Score Fixes<br><br>
+              Scoring rubric:<br>
+              <span class="kw">+25</span> parameterised query &nbsp;<span class="kw">+25</span> shell_escape<br>
+              <span class="kw">+20</span> context-aware variable names<br>
+              <span class="kw">+15</span> multi-line completeness<br>
+              <span class="kw2">-10</span> placeholder detected &nbsp;<span class="kw2">-15</span> truncated fix<br><br>
+              <span class="comment">// Returns high / medium / low badge per finding</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ── CURSOR ── */
+var cur=document.getElementById('cursor'),ring=document.getElementById('cursorRing'),rx=0,ry=0,mx=0,my=0;
+document.addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function animRing(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animRing);})();
+
+var depAllFindings=[];
+
+function showSection(name){
+  document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('.sidebar-item').forEach(function(i){i.classList.remove('active');});
+  document.getElementById('section-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+}
+
+function setSteps(containerId,steps){
+  var el=document.getElementById(containerId);
+  el.innerHTML=steps.map(function(s){
+    return '<div class="pstep '+esc(s.state)+'"><div class="pdot"></div>'+esc(s.label)+'</div>';
+  }).join('');
+}
+function showProgress(id,show){document.getElementById(id).classList.toggle('show',show);}
+
+/* ── SECRET ADVISOR ── */
+function runSecretAdvisor(){
+  var id=document.getElementById('sa-scan-id').value.trim();
+  if(!id){flashErr('sa-scan-id');return;}
+  var btn=document.getElementById('sa-btn');
+  btn.disabled=true;
+  showProgress('sa-progress',true);
+  setSteps('sa-steps',[
+    {state:'done',label:'Scan ID validated'},
+    {state:'running',label:'Fetching findings from scan...'},
+    {state:'',label:'Identifying hardcoded secrets'},
+    {state:'',label:'Building per-secret runbooks'}
+  ]);
+  document.getElementById('sa-output').innerHTML=
+    '<div class="status-line"><span class="spinner"></span>Connecting to /scan/'+esc(id)+'/secret-advisor...</div>';
+  fetch('/scan/'+encodeURIComponent(id)+'/secret-advisor',{method:'GET',headers:{'Accept':'application/json'}})
+  .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status+' — '+r.statusText);return r.json();})
+  .then(function(data){
+    setSteps('sa-steps',[{state:'done',label:'Scan ID validated'},{state:'done',label:'Findings fetched'},{state:'done',label:'Secrets identified'},{state:'done',label:'Runbooks generated'}]);
+    setTimeout(function(){showProgress('sa-progress',false);},1200);
+    renderSecrets(data);btn.disabled=false;
+  })
+  .catch(function(e){
+    setSteps('sa-steps',[{state:'done',label:'Scan ID validated'},{state:'error',label:'Request failed: '+e.message}]);
+    document.getElementById('sa-output').innerHTML='<div class="err-state">'+esc(e.message)+'<div class="hint">Check that this scan ID exists in the dashboard and the server is running.</div></div>';
+    btn.disabled=false;toast(e.message,'error');
+  });
+}
+
+function renderSecrets(data){
+  var advisories=(data.advisories||data.secrets||data.findings||(Array.isArray(data)?data:null));
+  if(!advisories||!Array.isArray(advisories)||!advisories.length){
+    document.getElementById('sa-output').innerHTML='<div class="empty-state">'+esc(data.summary||'No hardcoded secrets found in this scan.')+'</div>';
+    return;
+  }
+  var html='';
+  advisories.forEach(function(s,i){
+    var sev=(s.severity||'').toUpperCase();
+    var urgCls=sev==='CRITICAL'?'urgency-critical':sev==='HIGH'?'urgency-high':sev==='MEDIUM'?'urgency-medium':'urgency-low';
+    html+='<div class="secret-card" style="animation-delay:'+i*.04+'s">';
+    html+='<div class="sc-header"><div class="sc-svc">'+esc(s.service||'Unknown Service')+'</div>';
+    if(sev)html+='<span class="sev-badge '+esc(sev)+'">'+esc(sev)+'</span>';
+    html+='</div>';
+    if(s.secret_name)html+='<div class="sc-name">'+esc(s.secret_name)+'</div>';
+    if(s.file&&s.file!=='unknown'){var loc=s.file+(s.line?':'+s.line:'');html+='<div class="sc-name" style="color:var(--muted2)">'+esc(loc)+'</div>';}
+    html+='<div class="sc-risk">'+esc(s.risk||'No description.')+'</div>';
+    var steps=s.rotation_steps||s.steps||[];
+    if(steps.length){html+='<div class="sc-steps">';steps.forEach(function(st,n){html+='<span class="n">'+(n+1)+'.</span> '+esc(st)+'<br>';});html+='</div>';}
+    if(s.replacement_code||s.code)html+='<div class="sc-code">'+esc(s.replacement_code||s.code)+'</div>';
+    if(s.secrets_manager||s.aws_command)html+='<div class="sc-code sm">'+esc(s.secrets_manager||s.aws_command)+'</div>';
+    if(s.urgency)html+='<div class="sc-urgency '+urgCls+'">'+esc(s.urgency)+'</div>';
+    html+='</div>';
+  });
+  document.getElementById('sa-output').innerHTML=html;
+  var badge=document.getElementById('sa-badge');badge.textContent=advisories.length;badge.style.display='';
+  var msg=data.summary||('Found '+advisories.length+' secret'+(advisories.length!==1?'s':'')+(data.critical?' — '+data.critical+' critical':''));
+  toast(msg,'success');
+}
+
+/* ── DEP SCANNER ── */
+var depDrop=document.getElementById('dep-drop');
+depDrop.addEventListener('dragover',function(e){e.preventDefault();depDrop.classList.add('dragover');});
+depDrop.addEventListener('dragleave',function(){depDrop.classList.remove('dragover');});
+depDrop.addEventListener('drop',function(e){
+  e.preventDefault();depDrop.classList.remove('dragover');
+  var f=e.dataTransfer.files[0];
+  if(f&&f.name.toLowerCase().endsWith('.zip')){runDepScan(f);}
+  else{toast('Please drop a .zip file','error');}
+});
+
+function runDepScan(file){
+  if(!file)return;
+  document.getElementById('dep-filename').textContent=file.name+' ('+Math.round(file.size/1024)+' KB)';
+  document.getElementById('dep-stats').style.display='none';
+  document.getElementById('dep-filter-row').style.display='none';
+  var st=document.getElementById('dep-status');
+  st.style.display='flex';
+  st.innerHTML='<span class="spinner"></span>Uploading '+esc(file.name)+'...';
+  showProgress('dep-progress',true);
+  setSteps('dep-steps',[
+    {state:'done',label:'File received: '+file.name},
+    {state:'running',label:'Extracting manifests...'},
+    {state:'',label:'Querying OSV database (batch)'},
+    {state:'',label:'Mapping CVSS scores'}
+  ]);
+  document.getElementById('dep-output').innerHTML=
+    '<div class="status-line"><span class="spinner"></span>Uploading to /scan/deps...</div>';
+  var fd=new FormData();
+  fd.append('file',file);
+  fetch('/scan/deps',{method:'POST',body:fd})
+  .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status+' — '+r.statusText);return r.json();})
+  .then(function(data){
+    depAllFindings=Array.isArray(data.findings)?data.findings:Array.isArray(data)?data:[];
+    setSteps('dep-steps',[{state:'done',label:'File received'},{state:'done',label:'Manifests extracted'},{state:'done',label:'OSV database queried'},{state:'done',label:'CVSS scores mapped'}]);
+    setTimeout(function(){showProgress('dep-progress',false);},1200);
+    st.innerHTML='<span style="color:var(--accent)">&#10003;</span> Scan complete &mdash; '+depAllFindings.length+' findings';
+    updateDepStats(depAllFindings);
+    renderDeps(depAllFindings);
+    document.getElementById('dep-filter-row').style.display='flex';
+    document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active');});
+    document.querySelector('.filter-btn.fall').classList.add('active');
+    var badge=document.getElementById('dep-badge');badge.textContent=depAllFindings.length;badge.style.display='';
+    toast('Found '+depAllFindings.length+' vulnerable dependenc'+(depAllFindings.length!==1?'ies':'y'),'success');
+  })
+  .catch(function(e){
+    setSteps('dep-steps',[{state:'done',label:'File received'},{state:'error',label:'Scan failed: '+e.message}]);
+    st.innerHTML='<span style="color:var(--accent2)">&#10007;</span> '+esc(e.message);
+    document.getElementById('dep-output').innerHTML='<div class="err-state">'+esc(e.message)+'<div class="hint">Ensure the server is running and the file is a valid project ZIP.</div></div>';
+    toast(e.message,'error');
+  });
+}
+
+function updateDepStats(findings){
+  if(!Array.isArray(findings)){
+    document.getElementById('dep-output').innerHTML='<div class="err-state">Unexpected response from server.<div class="hint">Ensure the server is running and the file is a valid project ZIP.</div></div>';
+    return;
+  }
+  document.getElementById('dep-stat-total').textContent=findings.length;
+  document.getElementById('dep-stat-high').textContent=findings.filter(function(f){return f.severity==='CRITICAL'||f.severity==='HIGH';}).length;
+  document.getElementById('dep-stat-fixed').textContent=findings.filter(function(f){return f.fixed_version;}).length;
+  document.getElementById('dep-stats').style.display='grid';
+}
+
+function depFilter(btn,sev){
+  document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  if(!Array.isArray(depAllFindings))return;
+  renderDeps(sev==='all'?depAllFindings:depAllFindings.filter(function(f){return f.severity===sev;}));
+}
+
+/*
+ * renderDeps — rich card layout.
+ *
+ * Each card shows:
+ *   • Package name + ecosystem pill + severity badge
+ *   • CVE ID (linked) + OSV vuln ID + published date
+ *   • CVSS animated gauge bar with numeric score
+ *   • Summary / description text
+ *   • Current version → fixed version with fix code snippet
+ *   • Manifest file path
+ *   • Up to 3 reference links
+ */
+function renderDeps(findings){
+  document.getElementById('dep-count').textContent=findings.length+' finding'+(findings.length!==1?'s':'');
+  if(!findings.length){
+    document.getElementById('dep-output').innerHTML='<div class="empty-state">No findings for this filter.</div>';
+    return;
+  }
+
+  var html='';
+  findings.forEach(function(f,i){
+    var sev=(f.severity||'LOW').toUpperCase();
+    var isCrit=sev==='CRITICAL';
+    var isHigh=sev==='HIGH';
+    var isMed =sev==='MEDIUM';
+
+    /* Card wrapper classes */
+    var cardCls='dep-card';
+    if(isCrit) cardCls+=' crit';
+    else if(isHigh) cardCls+=' sev-high';
+    else if(isMed)  cardCls+=' sev-medium';
+    else            cardCls+=' sev-low';
+
+    html+='<div class="'+cardCls+'" style="animation-delay:'+i*.03+'s">';
+
+    /* ── TOP BAR: name + ecosystem + severity ── */
+    var eco=(f.ecosystem||'').toLowerCase();
+    var ecoCls='eco-pill eco-'+(eco==='pypi'?'pypi':eco==='npm'?'npm':eco==='go'?'go':eco==='packagist'?'packagist':'');
+    html+='<div class="dep-topbar">';
+    html+='<div class="dep-pkg-name">'+esc(f.package||f.name||'unknown')+'</div>';
+    html+='<div class="dep-badges">';
+    if(f.ecosystem) html+='<span class="'+esc(ecoCls)+'">'+esc(f.ecosystem)+'</span>';
+    html+='<span class="sev-badge '+esc(sev)+'">'+esc(sev)+'</span>';
+    html+='</div></div>';
+
+    /* ── CVE + OSV ID + published date ── */
+    var cve=f.cve||f.cve_id||'';
+    var osvId=f.vuln_id||f.id||'';
+    if(cve||osvId||f.published){
+      html+='<div class="dep-id-row">';
+      if(cve){
+        /* Link CVE to NVD */
+        html+='<a class="dep-cve" href="https://nvd.nist.gov/vuln/detail/'+esc(cve)+'" target="_blank" rel="noopener">'+esc(cve)+'</a>';
+      }
+      if(osvId&&osvId!==cve){
+        html+='<span class="dep-osv">'+esc(osvId)+'</span>';
+      }
+      if(f.published){
+        html+='<span class="dep-published">Published '+esc(f.published)+'</span>';
+      }
+      html+='</div>';
+    }
+
+    /* ── CVSS GAUGE ── */
+    if(f.cvss_score!=null){
+      var score=parseFloat(f.cvss_score);
+      var pct=Math.min(100,Math.round((score/10)*100));
+      var barCls=isCrit?'crit-bar':isHigh?'high-bar':isMed?'med-bar':'low-bar';
+      var scoreCls=isCrit?'crit-score':isHigh?'high-score':isMed?'med-score':'low-score';
+      html+='<div class="dep-cvss-wrap">';
+      html+='<span class="cvss-label">CVSS '+esc(String(score.toFixed(1)))+'</span>';
+      html+='<div class="cvss-track"><div class="cvss-bar '+barCls+'" style="width:'+pct+'%"></div></div>';
+      html+='<span class="cvss-score '+scoreCls+'">'+pct+'%</span>';
+      html+='</div>';
+    }
+
+    /* ── SUMMARY / DESCRIPTION ── */
+    var desc=f.description||f.summary||'';
+    if(desc){
+      html+='<div class="dep-summary">'+esc(desc)+'</div>';
+    }
+
+    /* ── VERSION ROW ── */
+    var curVer=f.version||f.current_version||'';
+    var fixVer=f.fixed_version||'';
+    var fixReason=f.fix_reason||'unpatched';
+    var lastAffected=f.last_affected||'';
+    html+='<div class="dep-version-row">';
+    if(curVer){
+      html+='<div class="dep-ver-item"><span class="vk">installed</span><span class="vv">'+esc(curVer)+'</span></div>';
+    }
+    if(fixVer){
+      /* Concrete fixed version known */
+      html+='<div class="dep-arrow">&#8594;</div>';
+      html+='<div class="dep-ver-item has-fix"><span class="vk">safe version</span><span class="vv">'+esc(fixVer)+'</span></div>';
+    } else if(fixReason==='last_affected'&&lastAffected){
+      /* We know the last bad version but not the exact first safe one */
+      html+='<div class="dep-arrow" style="color:var(--accent3)">&#8594;</div>';
+      html+='<div class="dep-ver-item" style="border-left:2px solid var(--accent3)"><span class="vk">upgrade beyond</span><span class="vv" style="color:var(--accent3)">'+esc(lastAffected)+'</span></div>';
+    } else if(fixReason==='git_only'){
+      /* Advisory only has git commit hashes, no version tag */
+      html+='<div class="dep-ver-item" style="border-left:2px solid var(--muted2);margin-left:4px"><span class="vk">fix available as</span><span class="vv" style="color:var(--muted)">git commit only</span></div>';
+    } else {
+      /* Genuinely unpatched */
+      html+='<div class="dep-ver-item" style="border-left:2px solid var(--accent2);margin-left:4px"><span class="vk">fixed version</span><span class="vv" style="color:var(--accent2)">unpatched &#9888;</span></div>';
+    }
+    html+='</div>';
+
+    /* ── FIX SNIPPET ── */
+    if(f.fixed_code){
+      html+='<div class="dep-fix-snippet">'+esc(f.fixed_code)+'</div>';
+    }
+
+    /* ── MANIFEST PATH ── */
+    if(f.file||f.manifest){
+      var mpath=f.file||f.manifest;
+      html+='<div class="dep-manifest">';
+      html+='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+      html+=esc(mpath);
+      html+='</div>';
+    }
+
+    /* ── REFERENCES ── */
+    var refs=f.references||[];
+    if(refs.length){
+      html+='<div class="dep-refs"><span class="dep-refs-label">refs:</span>';
+      refs.slice(0,3).forEach(function(url,ri){
+        /* Shorten URL for display */
+        var label=url.replace(/^https?:\/\//,'').split('/').slice(0,2).join('/');
+        html+='<a class="dep-ref-link" href="'+esc(url)+'" target="_blank" rel="noopener">'+esc(label)+'</a>';
+      });
+      html+='</div>';
+    } else {
+      /* Close card with bottom padding when no refs */
+      html+='<div style="height:10px"></div>';
+    }
+
+    html+='</div>'; /* end dep-card */
+  });
+
+  document.getElementById('dep-output').innerHTML=html;
+}
+
+/* ── FIX CONFIDENCE ── */
+function runConfidence(){
+  var id=document.getElementById('cf-scan-id').value.trim();
+  if(!id){flashErr('cf-scan-id');return;}
+  var btn=document.getElementById('cf-btn');
+  btn.disabled=true;
+  showProgress('cf-progress',true);
+  setSteps('cf-steps',[
+    {state:'done',label:'Scan ID validated'},
+    {state:'running',label:'Fetching AI-generated fixes...'},
+    {state:'',label:'Scoring fix quality'},
+    {state:'',label:'Assigning confidence badges'}
+  ]);
+  document.getElementById('cf-output').innerHTML=
+    '<div class="status-line"><span class="spinner"></span>Connecting to /scan/'+esc(id)+'/confidence...</div>';
+  fetch('/scan/'+encodeURIComponent(id)+'/confidence',{method:'GET',headers:{'Accept':'application/json'}})
+  .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status+' — '+r.statusText);return r.json();})
+  .then(function(data){
+    setSteps('cf-steps',[{state:'done',label:'Scan ID validated'},{state:'done',label:'Fixes fetched'},{state:'done',label:'Scores calculated'},{state:'done',label:'Badges assigned'}]);
+    setTimeout(function(){showProgress('cf-progress',false);},1200);
+    renderConfidence(data);btn.disabled=false;
+  })
+  .catch(function(e){
+    setSteps('cf-steps',[{state:'done',label:'Scan ID validated'},{state:'error',label:'Request failed: '+e.message}]);
+    document.getElementById('cf-output').innerHTML='<div class="err-state">'+esc(e.message)+'<div class="hint">Ensure fixes have been generated for this scan ID.</div></div>';
+    btn.disabled=false;toast(e.message,'error');
+  });
+}
+
+function renderConfidence(data){
+  var findings=data.findings||data||[];
+  if(!Array.isArray(findings)||!findings.length){
+    document.getElementById('cf-output').innerHTML='<div class="empty-state">No scored findings returned.</div>';
+    return;
+  }
+  var html='';
+  findings.forEach(function(f,i){
+    var rawScore=f.fix_confidence!=null?f.fix_confidence:(f.score!=null?f.score:(f.confidence!=null?f.confidence:null));
+    var score=rawScore!=null&&!isNaN(Number(rawScore))?Math.round(Number(rawScore)):0;
+    var level=f.fix_confidence_grade||f.grade||f.level||(score>=80?'high':score>=50?'medium':'low');
+    if(level!=='high'&&level!=='medium'&&level!=='low') level=score>=80?'high':score>=50?'medium':'low';
+    var barCls=level==='high'?'bar-g':level==='medium'?'bar-y':'bar-r';
+    html+='<div class="conf-card" style="animation-delay:'+i*.04+'s">';
+    html+='<div class="cf-row"><div class="cf-name">'+esc(f.title||f.name||f.finding||'Finding #'+(i+1))+'</div>';
+    html+='<span class="conf-badge '+esc(level)+'">'+esc(level)+' &middot; '+score+'</span></div>';
+    html+='<div class="bar-wrap"><div class="bar-fill '+esc(barCls)+'" style="width:'+score+'%"></div></div>';
+    html+='<div class="cf-breakdown">';
+    var bd=f.breakdown;
+    if(Array.isArray(bd)&&bd.length){
+      bd.forEach(function(item){var pts=Number(item.points)||0;var cls=pts>0?'pos':pts<0?'neg':'neu';html+='<span class="'+cls+'">'+(pts>0?'+':'')+pts+' '+esc(item.reason||'')+'</span>';});
+    } else if(bd&&typeof bd==='object'&&!Array.isArray(bd)){
+      Object.keys(bd).forEach(function(k){var v=Number(bd[k]);if(isNaN(v))return;var cls=v>0?'pos':v<0?'neg':'neu';html+='<span class="'+cls+'">'+esc(k)+': '+(v>0?'+':'')+v+'</span>';});
+    }
+    html+='</div></div>';
+  });
+  document.getElementById('cf-output').innerHTML=html;
+  var badge=document.getElementById('cf-badge');badge.textContent=findings.length;badge.style.display='';
+  toast('Scored '+findings.length+' fix'+(findings.length!==1?'es':''),'success');
+}
+
+/* ── SCAN HISTORY DROPDOWNS ── */
+function loadRecentScans(ddId,inputId){
+  var dd=document.getElementById(ddId);
+  dd.disabled=true;dd.innerHTML='<option value="">Loading...</option>';
+  fetch('/scans',{headers:{'Accept':'application/json'}})
+  .then(function(r){if(r.status===404)return{scans:[]};if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  .then(function(data){
+    var scans=data.scans||data||[];
+    if(!Array.isArray(scans)||!scans.length){dd.innerHTML='<option value="">\u25BC No scans on server yet</option>';dd.disabled=false;return;}
+    scans.sort(function(a,b){var ta=a.created_at||a.timestamp||a.scan_id||'';var tb=b.created_at||b.timestamp||b.scan_id||'';return tb>ta?1:-1;});
+    dd.innerHTML='<option value="">\u25BC Recent scans ('+Math.min(scans.length,20)+')...</option>';
+    scans.slice(0,20).forEach(function(s){
+      var id=s.scan_id||s.id||'';if(!id)return;
+      var label=id;
+      if(s.repo)label+='\u2002\u00B7\u2002'+(s.repo.replace(/.*\//,''));
+      if(s.created_at){var d=new Date(s.created_at);if(!isNaN(d))label+='\u2002'+d.toLocaleDateString();}
+      if(s.findings_count!=null)label+=' ('+s.findings_count+'f)';
+      var opt=document.createElement('option');opt.value=id;opt.textContent=label;dd.appendChild(opt);
+    });
+    dd.disabled=false;
+  })
+  .catch(function(){dd.innerHTML='<option value="">\u25BC Could not load scans</option>';dd.disabled=false;});
+}
+
+function onSaDropdown(sel){if(sel.value)document.getElementById('sa-scan-id').value=sel.value;}
+function onCfDropdown(sel){if(sel.value)document.getElementById('cf-scan-id').value=sel.value;}
+
+window.addEventListener('DOMContentLoaded',function(){
+  loadRecentScans('sa-scan-dd','sa-scan-id');
+  loadRecentScans('cf-scan-dd','cf-scan-id');
+});
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function flashErr(id){var el=document.getElementById(id);el.classList.add('err');el.focus();setTimeout(function(){el.classList.remove('err');},1400);}
+function copyOutput(id){navigator.clipboard.writeText(document.getElementById(id).innerText).then(function(){toast('Copied to clipboard','success');}).catch(function(){toast('Copy failed — try selecting manually','error');});}
+var toastTimer;
+function toast(msg,type){var el=document.getElementById('toast');el.textContent=msg;el.className='toast '+(type||'info')+' show';clearTimeout(toastTimer);toastTimer=setTimeout(function(){el.classList.remove('show');},3200);}
+document.getElementById('sa-scan-id').addEventListener('keydown',function(e){if(e.key==='Enter')runSecretAdvisor();});
+document.getElementById('cf-scan-id').addEventListener('keydown',function(e){if(e.key==='Enter')runConfidence();});
+</script>
+</body>
+</html>

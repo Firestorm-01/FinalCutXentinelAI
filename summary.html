@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XentinelAI Features</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #1C2526;
+      --light: #E0F7FA;
+      --blue1: #4FC3F7;
+      --blue2: #29B6F6;
+      --blue3: #0288D1;
+      --blue4: #0277BD;
+      --yellow: #FFCA28;
+      --orange: #FFB300;
+      --red: #FF5252;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg-dark);
+      color: white;
+      font-family: 'Syne', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .final-title {
+      opacity: 0;
+      font-size: 2.2rem;
+      margin-bottom: 2rem;
+
+      /* Gradient text */
+      background: linear-gradient(90deg, #4FC3F7, #29B6F6, #FFCA28, #FF5252);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+
+      animation: fadeIn 1s ease forwards;
+    }
+
+    .bubble-container {
+      position: relative;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      border: 2px solid #4FC3F7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bubble-wrapper {
+      position: absolute;
+      opacity: 0;
+      transform: scale(0);
+      animation: popIn 0.5s ease forwards;
+    }
+
+    .bubble {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-radius: 50%;
+      aspect-ratio: 1/1;
+      font-weight: 800;
+      color: #000;
+      padding: 6px;
+      animation: float 4s ease-in-out infinite alternate;
+    }
+
+    .final-brand {
+      opacity: 0;
+      font-size: 1.5rem;
+      margin-top: 2rem;
+      letter-spacing: 4px;
+
+      /* Gradient text */
+      background: linear-gradient(90deg, #FFCA28, #FFB300, #29B6F6, #0288D1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+
+      animation: fadeIn 1s ease forwards;
+    }
+
+    @keyframes popIn {
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes float {
+      from { transform: translateY(0px); }
+      to { transform: translateY(-8px); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+  </style>
+</head>
+
+<body>
+
+<h1 class="final-title" id="title">18 Strong Features</h1>
+<div class="bubble-container" id="container"></div>
+<h2 class="final-brand" id="brand">XentinelAI</h2>
+
+<script>
+  const features = [
+    "AI Solutions", 
+    "Attack<br>Simulation", 
+    "Attack<br>Chains", 
+    "Compliance<br>Check", 
+    "Multi-Repo<br>Scan", 
+    "Active<br>Threats", 
+    "MITRE<br>ATT&CK", // ✅ Added as #7
+    "Generate<br>Fix PR", 
+    "Secret<br>Advisor", 
+    "Dependency<br>Vuln", 
+    "Fix<br>Confidence", 
+    "Remediation<br>Roadmap", 
+    "Ask<br>XentinelAI", 
+    "Score<br>Trend", 
+    "Slack<br>Alerts", 
+    "AWS SNS", 
+    "JSON<br>Report", 
+    "PDF<br>Reports"
+  ];
+
+  const palette = [
+    "#E0F7FA",
+    "#4FC3F7",
+    "#29B6F6",
+    "#0288D1",
+    "#0277BD",
+    "#FFCA28",
+    "#FFB300",
+    "#FF5252"
+  ];
+
+  const container = document.getElementById('container');
+  const center = 300;
+  const total = features.length;
+
+  features.forEach((feat, i) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'bubble-wrapper';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.innerHTML = feat;
+
+    let size, radius, angle, fontSize;
+
+    if (i === 0) {
+      size = 140;
+      radius = 0;
+      angle = 0;
+      fontSize = 16;
+    } else if (i <= 7) {
+      size = 115;
+      radius = 135;
+      angle = ((i - 1) / 7) * Math.PI * 2;
+      fontSize = 13;
+    } else {
+      size = 95;
+      radius = 245;
+      angle = ((i - 7) / 10) * Math.PI * 2 + (Math.PI / 10);
+      fontSize = 11;
+    }
+
+    const x = center + Math.cos(angle) * radius - size/2;
+    const y = center + Math.sin(angle) * radius - size/2;
+
+    wrapper.style.width = size + "px";
+    wrapper.style.height = size + "px";
+    wrapper.style.left = x + "px";
+    wrapper.style.top = y + "px";
+
+    wrapper.style.animationDelay = `${i * 0.3}s`;
+
+    bubble.style.width = "100%";
+    bubble.style.height = "100%";
+    bubble.style.fontSize = fontSize + "px";
+    bubble.style.background = palette[i % palette.length];
+
+    wrapper.appendChild(bubble);
+    container.appendChild(wrapper);
+  });
+
+  document.getElementById('title').style.animationDelay = `${total * 0.3 + 0.2}s`;
+  document.getElementById('brand').style.animationDelay = `${total * 0.3 + 0.8}s`;
+</script>
+
+</body>
+</html>
