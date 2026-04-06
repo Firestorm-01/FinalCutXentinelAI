@@ -68,6 +68,3 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
-
-
-pat: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
